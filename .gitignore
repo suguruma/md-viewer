@@ -1,0 +1,7 @@
+node_modules/
+*.log
+.DS_Store
+
+# ビルド成果物(GitHub Releasesへ添付。リポジトリには含めない)
+dist/
+build/sea-prep.blob

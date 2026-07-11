@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MD Viewer</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230969da'/%3E%3Ctext x='16' y='22' font-size='14' font-weight='bold' font-family='sans-serif' fill='white' text-anchor='middle'%3EMD%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="/style.css">
+  <script src="/vendor/mermaid/mermaid.min.js" defer></script>
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header id="mdv-toolbar">
+    <button id="mdv-sidebar-toggle" class="mdv-icon-btn" title="サイドバー表示切替">
+      <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M1 3h14v1.5H1zM1 7.25h14v1.5H1zM1 11.5h14V13H1z"/></svg>
+    </button>
+    <span id="mdv-conn" class="mdv-conn" title="ライブリロード: 接続中"></span>
+    <span id="mdv-doc-title">読み込み中…</span>
+    <div class="mdv-spacer"></div>
+    <div id="mdv-find">
+      <input id="mdv-find-input" type="text" placeholder="ページ内検索 ( / )" autocomplete="off" spellcheck="false">
+      <span id="mdv-find-count"></span>
+      <button id="mdv-find-prev" class="mdv-icon-btn" title="前へ (Shift+Enter)">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 4l5 6H3z"/></svg>
+      </button>
+      <button id="mdv-find-next" class="mdv-icon-btn" title="次へ (Enter)">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M8 12L3 6h10z"/></svg>
+      </button>
+    </div>
+    <button id="mdv-outline-toggle" class="mdv-icon-btn" title="目次を表示">
+      <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M3 4h10v1.5H3zM3 7.25h10v1.5H3zM3 10.5h6V12H3z"/></svg>
+    </button>
+    <button id="mdv-theme-toggle" class="mdv-icon-btn" title="ダーク/ライト切替">
+      <svg class="icon-sun" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1.5a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1A.75.75 0 0 1 8 12.5zm0-11a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1A.75.75 0 0 1 8 1.5zm6.5 5.75a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 1 0-1.5zm-12 0a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 1 0-1.5zm10.03-4.28a.75.75 0 0 1 0 1.06l-.7.71a.75.75 0 1 1-1.07-1.06l.71-.71a.75.75 0 0 1 1.06 0zM4.24 11.76a.75.75 0 0 1 0 1.06l-.7.71a.75.75 0 0 1-1.07-1.06l.71-.71a.75.75 0 0 1 1.06 0zm8.29 1.77l-.7-.71a.75.75 0 1 1 1.06-1.06l.71.7a.75.75 0 1 1-1.07 1.07zM4.24 4.24l-.7-.71a.75.75 0 0 1 1.06-1.06l.71.7A.75.75 0 1 1 4.24 4.24z"/></svg>
+      <svg class="icon-moon" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M9.6 1.6a6.4 6.4 0 1 0 4.8 10.4A7.2 7.2 0 0 1 9.6 1.6z"/></svg>
+    </button>
+  </header>
+
+  <div id="mdv-body">
+    <aside id="mdv-sidebar">
+      <button id="mdv-open-folder-btn" class="mdv-open-folder-btn" type="button">
+        <svg viewBox="0 0 16 16" width="14" height="14"><path fill="currentColor" d="M1.5 3A1.5 1.5 0 0 1 3 1.5h3.379a1.5 1.5 0 0 1 1.06.44l1.122 1.12a.5.5 0 0 0 .354.147H13A1.5 1.5 0 0 1 14.5 4.7v7.8A1.5 1.5 0 0 1 13 14H3a1.5 1.5 0 0 1-1.5-1.5z"/></svg>
+        <span>フォルダを開く</span>
+      </button>
+      <div class="mdv-sidebar-head">
+        <span id="mdv-root-name"></span>
+        <span id="mdv-file-count"></span>
+      </div>
+      <div class="mdv-search-box">
+        <input id="mdv-search-input" type="text" placeholder="全ファイル検索 (2文字以上)" autocomplete="off" spellcheck="false">
+      </div>
+      <div id="mdv-search-results" hidden></div>
+      <nav id="mdv-tree" role="tree" aria-label="ファイルツリー"></nav>
+    </aside>
+
+    <main id="mdv-content">
+      <article id="mdv-doc" class="markdown-body"></article>
+    </main>
+
+    <div id="mdv-outline-backdrop"></div>
+    <aside id="mdv-outline-panel">
+      <div class="mdv-outline-title">目次</div>
+      <nav id="mdv-outline"></nav>
+    </aside>
+  </div>
+</body>
+</html>
