@@ -47,7 +47,7 @@ Both are unsigned independent builds — Windows SmartScreen may show "Windows p
 Requires Node.js ≥ 20.6.
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/suguruma/md-viewer.git
 cd md-viewer
 npm install
 npm start -- <folder-or-file>     # or: npm run sample

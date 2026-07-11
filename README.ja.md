@@ -47,7 +47,7 @@ Windows向け(Node.jsが動く環境ならどこでも)のローカル閲覧専�
 Node.js 20.6 以上が必要。
 
 ```bash
-git clone <このリポジトリのURL>
+git clone https://github.com/suguruma/md-viewer.git
 cd md-viewer
 npm install
 npm start -- <フォルダまたはファイル>     # または: npm run sample
