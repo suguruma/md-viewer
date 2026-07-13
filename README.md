@@ -11,7 +11,7 @@ A local, read-only Markdown viewer for Windows (and any Node.js platform). Open 
 ## Features
 
 - **Single-file or folder mode** — open one `.md` or an entire tree, with a lazy-expanding sidebar
-- **Switch folders without restarting** — an "Open folder" button re-roots the running server to any absolute path
+- **Switch folders without restarting** — an "Open folder" button re-roots the running server to any absolute path, and remembers it so double-clicking the app next time reopens the same folder
 - **GitHub Flavored Markdown** — tables, task lists, strikethrough, autolinks, footnotes, raw HTML
 - **Syntax highlighting** — [Shiki](https://shiki.style/), dual light/dark theme baked in at render time
 - **Mermaid diagrams** and **KaTeX math**, both with graceful error display instead of crashing the page

@@ -614,7 +614,9 @@ async function openFolderDialog() {
   await changeDir(trimmed)
 }
 
-async function changeDir(absPath) {
+// silent: true の場合、失敗してもアラートを出さない(起動時の自動復元用)。
+// 戻り値は切替に成功したかどうか。
+async function changeDir(absPath, { silent = false } = {}) {
   let res, data
   try {
     res = await fetch('/api/change-dir', {
@@ -624,12 +626,17 @@ async function changeDir(absPath) {
     })
     data = await res.json()
   } catch (e) {
-    window.alert('フォルダの切り替えに失敗しました: ' + (e?.message ?? e))
-    return
+    if (!silent) window.alert('フォルダの切り替えに失敗しました: ' + (e?.message ?? e))
+    return false
   }
   if (!res.ok) {
-    window.alert(data.error ?? `フォルダの切り替えに失敗しました (HTTP ${res.status})`)
-    return
+    if (!silent) {
+      window.alert(data.error ?? `フォルダの切り替えに失敗しました (HTTP ${res.status})`)
+    } else {
+      // 復元先が削除・移動されている等の場合、次回以降は自動復元を試みない
+      localStorage.removeItem('mdv.lastRoot')
+    }
+    return false
   }
 
   state.mode = data.mode
@@ -641,6 +648,7 @@ async function changeDir(absPath) {
   document.body.classList.remove('single-file')
   $('#mdv-root-name').textContent = data.rootName
   $('#mdv-root-name').title = data.rootPath
+  localStorage.setItem('mdv.lastRoot', data.rootPath)
 
   await refreshTree(false)
   const first = pickInitialFile(state.treeData ?? [])
@@ -650,6 +658,7 @@ async function changeDir(absPath) {
     history.replaceState(null, '', location.pathname + location.search)
     renderEmptyState()
   }
+  return true
 }
 
 // ---------- 横断検索(サイドバー) ----------
@@ -932,11 +941,19 @@ async function boot() {
   $('#mdv-root-name').textContent = cfg.rootName
   $('#mdv-root-name').title = cfg.rootPath
 
-  await refreshTree()
   connectWS()
   window.addEventListener('hashchange', onHashChange)
 
-  if (parseHash()) {
+  // URLに遷移先の指定がなくフォルダモードなら、前回開いていたフォルダへ自動復元する
+  // (ダブルクリック起動のたびに「フォルダを開く」をやり直さずに済むようにするため)。
+  const hasHash = !!parseHash()
+  const lastRoot = !hasHash && cfg.mode === 'dir' ? localStorage.getItem('mdv.lastRoot') : null
+  if (lastRoot && lastRoot !== cfg.rootPath && (await changeDir(lastRoot, { silent: true }))) {
+    return
+  }
+
+  await refreshTree()
+  if (hasHash) {
     await onHashChange()
   } else {
     const first = state.mode === 'file' ? state.initialFile : pickInitialFile(state.treeData ?? [])

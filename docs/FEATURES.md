@@ -2,7 +2,7 @@
 
 [日本語版はこちら / Japanese version](FEATURES.ja.md)
 
-Version: 1.1.0
+Version: 1.2.0
 Scope: Windows-focused local Markdown viewer (also runs on macOS/Linux from source)
 
 ## 1. Overview
@@ -24,6 +24,7 @@ Two runtime forms are provided:
 - **Single-file mode**: `mdv <file>.md` renders one file. The sidebar tree is hidden (the "Open folder" button remains available). Relative links/images resolve against the file's parent folder.
 - **Folder mode**: `mdv <folder>` builds a tree of every `.md`/`.markdown` file under the folder (dotfiles, `node_modules`, and folders with no Markdown descendants are excluded). Clicking a tree entry swaps the displayed document without a full page reload (hash-based routing: `#/relative/path.md#heading-id`).
 - **Switching folders at runtime**: an "Open folder" button at the top of the sidebar prompts for an absolute path and calls `POST /api/change-dir` (see §3) to re-root the server without restarting the process — the file watcher is torn down and re-created for the new root, the render cache is cleared, and the client rebuilds the tree and resets the URL hash to the new root's initial document.
+- **Remembering the last folder**: every successful folder switch is saved to `localStorage`. On a fresh launch with no URL fragment, the client automatically re-issues the switch to that remembered folder before rendering anything — so double-clicking the app (which always starts pointed at its own sample/working directory) reopens whatever you last had open instead of the sample. If the remembered folder no longer exists, the attempt fails silently, the stale entry is cleared, and the server's own startup folder is shown instead.
 
 ### 2.2 Markdown rendering pipeline
 
