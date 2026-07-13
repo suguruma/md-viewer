@@ -43,14 +43,16 @@ Name: "addtopath"; Description: "PATH に追加してターミナルから mdv �
 [Files]
 Source: "{#PortableDir}\mdv.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PortableDir}\app\*"; DestDir: "{app}\app"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "{#PortableDir}\README-portable.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#PortableDir}\はじめにお読みください.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\MD Viewer (サンプルを開く)"; Filename: "{app}\{#AppExeName}"; Parameters: """{app}\app\sample"""; WorkingDir: "{app}"
+Name: "{group}\はじめにお読みください"; Filename: "{app}\はじめにお読みください.txt"
 Name: "{group}\{cm:UninstallProgram,MD Viewer}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\MD Viewer"; Filename: "{app}\{#AppExeName}"; Parameters: """{app}\app\sample"""; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Run]
+Filename: "{app}\はじめにお読みください.txt"; Description: "はじめにお読みくださいを表示する"; Flags: postinstall shellexec skipifsilent unchecked
 Filename: "{app}\{#AppExeName}"; Parameters: """{app}\app\sample"""; Description: "{cm:LaunchProgram,MD Viewer (sample)}"; Flags: nowait postinstall skipifsilent runasoriginaluser
 
 [Code]

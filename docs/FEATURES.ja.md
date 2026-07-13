@@ -2,7 +2,7 @@
 
 [English version here](FEATURES.md)
 
-バージョン: 1.2.0
+バージョン: 1.2.1
 対象: Windows向けローカルMarkdownビューアー(ソースからならmacOS/Linuxでも動作)
 
 ## 1. 概要
@@ -139,15 +139,16 @@ MD Viewer は**利用者自身のローカルファイル**を閲覧する用途
 
 ### 6.2 ポータブル版(`.zip`)
 
-単体で完結するフォルダ構成。`mdv.exe` は Node.js公式の [Single Executable Applications](https://nodejs.org/api/single-executable-applications.html) 機能で作成した正真正銘の単一Windows実行ファイル(Node.js本体のコピーに、`postject` で小さなブートストラップ用blobを注入したもの)であり、隣接する `app/` フォルダにサーバー本体・クライアント資産・軽量化済みの `node_modules` を格納する(Mermaidのビルド時専用の巨大な依存関係 — `@mermaid-js/parser`、`cytoscape`、`cytoscape-fcose`、`d3`、`dompurify`、`es-toolkit` — はサーバーコードから `require()` されず、事前ビルド済みの `mermaid.min.js` のみが配信対象であるため除外している)。インストール不要・管理者権限不要・レジストリ変更なし。フォルダや `.md` ファイルを `mdv.exe` のアイコンへドラッグ&ドロップして開ける。
+単体で完結するフォルダ構成。`mdv.exe` は Node.js公式の [Single Executable Applications](https://nodejs.org/api/single-executable-applications.html) 機能で作成した正真正銘の単一Windows実行ファイル(Node.js本体のコピーに、`postject` で小さなブートストラップ用blobを注入したもの)であり、隣接する `app/` フォルダにサーバー本体・クライアント資産・軽量化済みの `node_modules` を格納する(Mermaidのビルド時専用の巨大な依存関係 — `@mermaid-js/parser`、`cytoscape`、`cytoscape-fcose`、`d3`、`dompurify`、`es-toolkit` — はサーバーコードから `require()` されず、事前ビルド済みの `mermaid.min.js` のみが配信対象であるため除外している)。インストール不要・管理者権限不要・レジストリ変更なし。フォルダや `.md` ファイルを `mdv.exe` のアイコンへドラッグ&ドロップして開ける。一般ユーザー向けに、起動方法・フォルダ切替・注意点をまとめた `はじめにお読みください.txt`(日本語)を `mdv.exe` と同じ場所に同梱する。ビルドスクリプトが生成するため、バージョン番号は常に一致する。
 
 ### 6.3 インストーラー版(`.exe`)
 
 [Inno Setup](https://jrsoftware.org/isinfo.php) でビルド。既定では管理者権限不要のユーザー単位インストール(`%LOCALAPPDATA%\Programs\MDViewer`)を行い、以下を含む。
 
-- スタートメニューへのショートカット(アプリ本体・サンプル起動・アンインストーラー)
-- デスクトップアイコン(任意、既定オフ)
+- スタートメニューへのショートカット(アプリ本体・サンプル起動・`はじめにお読みください.txt`・アンインストーラー)
+- デスクトップアイコン(対話式ウィザードでは既定でオン。ただし `/VERYSILENT` によるサイレントインストールでは `/TASKS="desktopicon"` を明示しない限り作成されない)
 - 「PATHに追加」タスク(任意、既定オフ)— 有効にするとどのターミナルからも `mdv` コマンドが使える
+- インストール完了直後に「はじめにお読みください.txt」を開くチェックボックス(任意、既定オフ)
 - 標準的なWindowsのアンインストールエントリ(アプリと機能)— PATHに追加していた場合はアンインストール時に自動で削除
 
 両パッケージともコード署名なし(証明書未取得)のため、初回起動時にWindows SmartScreenの警告(「WindowsによってPCが保護されました」)が表示される場合がある。個人配布の未署名ソフトでは想定内の挙動であり、「詳細情報」→「実行」で起動できる。

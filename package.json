@@ -1,6 +1,6 @@
 {
   "name": "md-viewer",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "ローカルMarkdownビューアー(単一ファイル/フォルダツリー対応、remark/rehypeプラグインで拡張可能)",
   "type": "module",
   "private": true,
