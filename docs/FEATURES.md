@@ -2,12 +2,12 @@
 
 [日本語版はこちら / Japanese version](FEATURES.ja.md)
 
-Version: 1.3.0
+Version: 1.4.0
 Scope: Windows-focused local Markdown viewer (also runs on macOS/Linux from source)
 
 ## 1. Overview
 
-MD Viewer is a local Markdown viewer, primarily for reading. It renders a single `.md` file or an entire folder tree of `.md` files as browsable HTML in the default web browser, with GitHub-flavored rendering, diagrams, math, search, live reload, and a mindmap overview. It is not a general editor: the only operations that write back to the source file are toggling a rendered task-list checkbox and two selection-based text-decoration keyboard shortcuts (§2.8–§2.9), both narrowly scoped and always re-verified server-side before writing (§5).
+MD Viewer is a local Markdown viewer, primarily for reading. It renders a single `.md` file or an entire folder tree of `.md` files as browsable HTML in the default web browser, with GitHub-flavored rendering, diagrams, math, search, live reload, a mindmap overview, and a pop-out preview window for multi-monitor use (§2.11). It is not a general editor: the only operations that write back to the source file are toggling a rendered task-list checkbox and two selection-based text-decoration keyboard shortcuts (§2.9–§2.10), both narrowly scoped and always re-verified server-side before writing (§5).
 
 Two runtime forms are provided:
 
@@ -104,6 +104,15 @@ Rendered GFM checkboxes (`<input type="checkbox">`) are clickable. The render pi
 
 Selecting text inside a single rendered paragraph or heading and pressing `Ctrl+Shift+X` wraps it in `~~strikethrough~~`; `Ctrl+Shift+U` wraps it in `<u>underline</u>` (rendered via the existing `rehype-raw` raw-HTML passthrough — no new syntax support needed). The render pipeline tags every `paragraph`/`heading` node with its source start/end offset the same way as §2.9. On keypress, the client walks up from the selection to the nearest tagged block; if the selection start and end resolve to *different* blocks, the operation is declined with an on-screen notice (single-block limitation, by design — see §8). Otherwise it fetches the block's raw source text (`GET /raw/<path>`) and searches for the selected string within it (picking the occurrence closest to the selection's approximate rendered-text position, if the string repeats), rather than computing a rendered-character-count offset — this sidesteps mismatches between rendered and source text from CRLF line endings, inline emphasis/links/code, KaTeX's hidden accessibility text, etc. If the selected text isn't found verbatim in the block's source (e.g. the selection spans into/out of markup so the rendered and source text diverge), the request is declined the same way. `POST /api/doc/wrap-selection` (§3) re-verifies the exact text server-side before writing.
 
+### 2.11 Pop-out preview window (multi-monitor)
+
+A toolbar toggle opens the current document in a second browser window/tab via `window.open()`, for viewing on a second monitor while navigating in the main window. The pop-out reuses the same `index.html`/`app.js` bundle rather than a separate build: the URL query parameter `?popout=1` switches the client into a stripped-down layout (toolbar, sidebar, and outline panel hidden via CSS; only the article/mindmap content area shown) instead of loading a second copy of the rendering logic. There is no editor in this app to speak of, so what's synchronized is *view state* — which document, which theme, and whether mindmap mode is active — not live-typed text.
+
+- **Initial state**: passed via the pop-out's URL at open time — the current document as a hash fragment (`#/path.md`, the app's existing routing scheme) and mindmap mode as a query flag. Theme needs no explicit hand-off: it's already read from the shared `localStorage` key on boot, same as any other tab.
+- **Live sync while open**: a same-origin [`BroadcastChannel`](https://developer.mozilla.org/en-US/docs/Web/API/BroadcastChannel) (`'mdv-sync'`) carries one-directional updates from the main window to the pop-out whenever the main window's active document, theme, or mindmap mode changes. The pop-out only listens; the main window only sends — this fixed direction rules out feedback loops without needing sequence numbers or origin checks. Document *content* changes (an external edit saved to disk) are not part of this channel at all: each window holds its own independent WebSocket connection to `/ws` (§2.6) and re-renders on its own `doc-changed` event, exactly as it would with two ordinary tabs open on the same file.
+- **Message validation**: each `{type, path, theme, mindmap}` message is type-checked field-by-field before use (`typeof` guards) and `path` still goes through the existing `/api/doc` path-resolution/traversal checks (§5) when the pop-out navigates to it — there is no new code path that trusts a cross-window message's content directly.
+- **Window lifecycle**: the toolbar button opens the pop-out (or focuses it if already open) and the main window's own content area is replaced with a small notice for as long as `!popoutWindow.closed` holds (checked via a 400 ms poll, since a child window's close isn't otherwise observable from the opener); closing the pop-out — from its own titlebar or the notice's "return here" button — restores the main window's normal preview automatically.
+
 ## 3. HTTP API
 
 All endpoints are served from the bound host/port (default `127.0.0.1:8931`).
@@ -188,6 +197,7 @@ Shiki's grammar/theme engine initialization (~4.5 s cold) is paid once at server
 - Not a general editor: writes are limited to task-checkbox toggling and the two decoration shortcuts (§2.9–§2.10). Free-form text editing still requires an external editor.
 - Decoration shortcuts only work within a single paragraph/heading whose selected text matches the source verbatim; selections spanning multiple blocks, or landing on/across inline markup such that the rendered and source text diverge (bold/italic/links/inline code/emoji/math), are declined with an on-screen notice rather than applied approximately.
 - The mindmap view has no node-editing capability — markmap is a one-directional (Markdown → diagram) visualization library with no built-in mechanism for mapping an edited node back to source position, and building one was judged not worth the cost relative to clicking a node to jump into the normal (editable-by-shortcut) preview instead.
+- The pop-out preview window (§2.11) only mirrors *which document/theme/mindmap-mode* the main window is showing; it does not mirror scroll position or in-page find state, and interacting with the pop-out's own mindmap (e.g. clicking a node) does not propagate back to the main window — sync is one-directional, main → pop-out, by design.
 - No automated test suite; verification is manual/scripted smoke testing (API responses, DOM assertions, real file-system edit-and-observe cycles).
 - Verified on Windows 11 only; source-based runs should work on macOS/Linux (standard Node APIs throughout) but are untested.
 - Unsigned Windows binaries trigger SmartScreen's "unrecognized app" warning.

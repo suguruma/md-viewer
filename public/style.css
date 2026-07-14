@@ -271,6 +271,42 @@ body.mindmap-mode #mdv-mindmap { display: block; }
 .markmap-foreign { cursor: pointer; }
 .markmap-foreign:hover { text-decoration: underline; }
 
+/* ===== ポップアウト(別ウィンドウ表示) ===== */
+#mdv-popout-toggle[aria-pressed="true"] { background: var(--active-bg); color: var(--accent); }
+
+/* ポップアウト側ウィンドウ: サイドバー・ツールバー・アウトラインを隠し、プレビューのみ表示 */
+body.popout-mode #mdv-toolbar,
+body.popout-mode #mdv-sidebar,
+body.popout-mode #mdv-outline-panel,
+body.popout-mode #mdv-outline-backdrop { display: none; }
+
+/* メイン側ウィンドウ: ポップアウトが開いている間はプレビューをプレースホルダーに差し替える */
+#mdv-popout-notice {
+  display: none;
+  position: absolute;
+  inset: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: var(--muted);
+  text-align: center;
+  padding: 40px;
+}
+body.popout-active #mdv-doc,
+body.popout-active #mdv-mindmap { display: none; }
+body.popout-active #mdv-popout-notice { display: flex; }
+.mdv-popout-notice-close-btn {
+  padding: 7px 18px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  cursor: pointer;
+  font-size: 13px;
+}
+.mdv-popout-notice-close-btn:hover { background: var(--hover-bg); }
+
 /* ===== アウトライン ===== */
 #mdv-outline-panel {
   width: 230px;

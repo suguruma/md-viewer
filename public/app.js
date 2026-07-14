@@ -3,6 +3,13 @@
 
 const $ = (sel) => document.querySelector(sel)
 
+// ポップアウトウィンドウ(?popout=1)かどうか。メイン/ポップアウトで共通のapp.jsを使い分ける。
+const isPopout = new URLSearchParams(location.search).get('popout') === '1'
+// メイン→ポップアウトの一方向状態同期チャネル(ファイル内容自体は各ウィンドウが
+// 独立に持つWebSocket経由のライブリロードで反映されるため、ここで運ぶのは
+// 「今どのファイル/テーマ/マインドマップ表示を見ているか」という表示状態のみ)
+const syncChannel = 'BroadcastChannel' in window ? new BroadcastChannel('mdv-sync') : null
+
 const state = {
   mode: 'dir',
   initialFile: null,
@@ -22,6 +29,8 @@ const state = {
 
 let mermaidSeq = 0
 let mindmapSeq = 0
+let popoutWin = null
+let popoutPollTimer = null
 
 // ---------- ユーティリティ ----------
 
@@ -62,6 +71,7 @@ async function toggleTheme() {
   localStorage.setItem('mdv.theme', state.theme)
   // mermaid はテーマをSVGに焼き込むため、本文を作り直して再描画する
   if (state.payload) await applyDoc(state.payload, null, { preserveScroll: true })
+  broadcastState()
 }
 
 // ---------- ルーティング(location.hash = "#/相対パス#見出しID") ----------
@@ -120,6 +130,7 @@ async function loadDoc(rel, frag, opts = {}) {
   document.title = `${rel.split('/').pop()} - MD Viewer`
   markActiveTreeItem(rel)
   await applyDoc(payload, frag, opts)
+  broadcastState()
 }
 
 async function applyDoc(payload, frag, { preserveScroll = false } = {}) {
@@ -368,6 +379,7 @@ async function setMindmapMode(on) {
   document.body.classList.toggle('mindmap-mode', on)
   $('#mdv-mindmap-toggle').setAttribute('aria-pressed', String(on))
   if (on) await refreshMindmap()
+  broadcastState()
 }
 
 async function refreshMindmap() {
@@ -423,6 +435,91 @@ async function jumpToMindmapNodeText(rawText) {
     $('#mdv-find-input').value = text
     runFind(text, { jump: true })
   }
+}
+
+// ---------- ポップアウト(別ウィンドウ表示)----------
+// メインウィンドウの「今どのファイル/テーマ/マインドマップ表示を見ているか」を
+// BroadcastChannelで一方向(メイン→ポップアウト)に同期する。ファイルの内容自体は
+// 各ウィンドウが独自に持つ /ws のライブリロードで反映されるため、ここで運ぶのは
+// 表示状態のみで生Markdownやレンダリング結果そのものは送らない。
+
+// 表示状態をポップアウトへ通知する(ポップアウト自身は送信しない。送信しても
+// ポップアウト側は自分の現在状態と同じであれば何もしないため、ループはしない)。
+function broadcastState() {
+  if (isPopout || !syncChannel) return
+  syncChannel.postMessage({
+    type: 'state',
+    path: state.current,
+    theme: state.theme,
+    mindmap: isMindmapMode(),
+  })
+}
+
+// ポップアウト側: メインからの通知を受けて表示状態を追従させる。
+async function applyRemoteState(msg) {
+  if (!msg || msg.type !== 'state') return
+  if (typeof msg.theme === 'string' && msg.theme !== state.theme) {
+    state.theme = msg.theme
+    document.documentElement.classList.toggle('dark', state.theme === 'dark')
+  }
+  if (typeof msg.path === 'string' && msg.path && msg.path !== state.current) {
+    setHash(msg.path)
+  }
+  if (typeof msg.mindmap === 'boolean' && msg.mindmap !== isMindmapMode()) {
+    await setMindmapMode(msg.mindmap)
+  }
+}
+
+// ポップアウトへ渡す初期状態はURLに乗せる(テーマはlocalStorage経由で初回から
+// 一致するため、ここではハッシュ=表示中ファイルとマインドマップ表示のみ)。
+function buildPopoutUrl() {
+  const params = new URLSearchParams()
+  params.set('popout', '1')
+  if (isMindmapMode()) params.set('mindmap', '1')
+  const hash = state.current ? '#/' + encodePath(state.current) : ''
+  return location.pathname + '?' + params.toString() + hash
+}
+
+function setPopoutActive(active) {
+  document.body.classList.toggle('popout-active', active)
+  $('#mdv-popout-toggle').setAttribute('aria-pressed', String(active))
+}
+
+function isPopoutOpen() {
+  return !!popoutWin && !popoutWin.closed
+}
+
+function openPopout() {
+  if (isPopoutOpen()) {
+    popoutWin.focus()
+    return
+  }
+  popoutWin = window.open(buildPopoutUrl(), 'mdv-popout', 'width=960,height=800')
+  if (!popoutWin || popoutWin === window) {
+    popoutWin = null
+    showToast('ポップアップがブロックされました。ブラウザの設定を確認してください')
+    return
+  }
+  setPopoutActive(true)
+  clearInterval(popoutPollTimer)
+  // window.closed はポップアウト側のonunload等に頼らず確実に検知できるため、
+  // シンプルなポーリングでウィンドウが閉じられたことを検出する。
+  popoutPollTimer = setInterval(() => {
+    if (!isPopoutOpen()) {
+      clearInterval(popoutPollTimer)
+      popoutWin = null
+      setPopoutActive(false)
+    }
+  }, 400)
+}
+
+function closePopout() {
+  if (isPopoutOpen()) popoutWin.close()
+}
+
+function togglePopout() {
+  if (isPopoutOpen()) closePopout()
+  else openPopout()
 }
 
 // ---------- コードブロックのコピー ----------
@@ -1088,6 +1185,9 @@ function bindUI() {
     if (foreign) jumpToMindmapNodeText(foreign.textContent)
   })
 
+  $('#mdv-popout-toggle').addEventListener('click', togglePopout)
+  $('#mdv-popout-notice-close').addEventListener('click', closePopout)
+
   $('#mdv-doc').addEventListener('change', handleTaskCheckboxChange)
 
   const findInput = $('#mdv-find-input')
@@ -1149,6 +1249,19 @@ function bindUI() {
 async function boot() {
   initTheme()
   bindUI()
+
+  if (isPopout) {
+    // ポップアウト側: サイドバー・ツールバーはCSSで非表示(popout-modeクラス)にし、
+    // プレビュー(またはマインドマップ)のみを表示する。フォルダ切替やツリーは扱わない。
+    document.body.classList.add('popout-mode')
+    if (syncChannel) syncChannel.onmessage = (ev) => applyRemoteState(ev.data)
+    connectWS()
+    window.addEventListener('hashchange', onHashChange)
+    const parsed = parseHash()
+    if (parsed) await loadDoc(parsed.rel, parsed.frag)
+    if (new URLSearchParams(location.search).get('mindmap') === '1') await setMindmapMode(true)
+    return
+  }
 
   const cfg = await fetchJSON('/api/config')
   state.mode = cfg.mode

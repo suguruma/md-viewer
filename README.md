@@ -23,6 +23,7 @@ A local Markdown viewer for Windows (and any Node.js platform). Open a single `.
 - **Mindmap overview** — toggle the current document into an interactive [Markmap](https://markmap.js.org/) mindmap built from its headings/lists; click a node to jump back to that spot in the normal preview
 - **Task-list checkboxes are clickable** — checking/unchecking a rendered checkbox rewrites the `[ ]`/`[x]` in the source file
 - **Text-decoration shortcuts** — select plain text within a single paragraph or heading and press `Ctrl+Shift+X` for `~~strikethrough~~` or `Ctrl+Shift+U` for `<u>underline</u>`
+- **Pop-out preview window** — open the current document in a second window/tab for a second monitor; it stays live-synced (document, theme, mindmap mode) with the main window
 - **Full keyboard navigation** — arrow keys, Home/End, and Enter/Space drive the file tree
 - **Print-friendly** — a dedicated print stylesheet for clean PDF export / hard copies
 - **Live reload** — save a file, the browser updates in place
@@ -82,6 +83,7 @@ mdv [path] [options]
 | View as mindmap | Toolbar mindmap button; click a node to jump back into the preview at that spot |
 | Toggle a task | Click its checkbox — rewrites `[ ]`/`[x]` in the source file |
 | Decorate selected text | Select text in a single paragraph/heading, then `Ctrl+Shift+X` (strikethrough) or `Ctrl+Shift+U` (underline) |
+| Pop out the preview | Toolbar pop-out button; click again (or close the window) to bring the preview back to the main window |
 | Toggle theme | Top-right button |
 | Copy code | Hover a code block, click "Copy" |
 | Print / export PDF | Your browser's print dialog — a dedicated stylesheet hides the UI chrome |
@@ -113,6 +115,7 @@ Emoji shortcodes (`:smile:`) are already built in via `remark-emoji`, no config 
 - The "Open folder" feature can re-root the server to any directory the OS user can read, with no allowlist — another reason not to bind beyond `127.0.0.1` on an untrusted network
 - Not a general editor — the only writes are checkbox toggling and the two selection-decoration shortcuts, and both are narrowly scoped: the server always re-verifies the exact text at the target position before writing, and refuses (no write) if it doesn't match. Free-form editing still requires your own text editor; the decoration shortcuts only work within a single paragraph/heading, and are skipped (with an on-screen notice) for selections that span multiple blocks or don't match the source verbatim (e.g. crossing bold/link/math markup)
 - The mindmap view is read/navigate-only — there is no in-mindmap node editing
+- The pop-out preview window mirrors *which document/theme/mindmap-mode* the main window shows (one-directional, main → pop-out) — not scroll position or in-page find state, and there's no editor for it to mirror live-typed text from in the first place
 
 ## Documentation
 
