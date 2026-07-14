@@ -1,6 +1,6 @@
 {
   "name": "md-viewer",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "description": "ローカルMarkdownビューアー(単一ファイル/フォルダツリー対応、remark/rehypeプラグインで拡張可能)",
   "type": "module",
   "private": true,
@@ -17,6 +17,7 @@
   "dependencies": {
     "@shikijs/rehype": "^3.0.0",
     "chokidar": "^4.0.1",
+    "d3": "^7.9.0",
     "express": "^5.1.0",
     "katex": "^0.16.11",
     "markmap-lib": "^0.18.12",

@@ -2,7 +2,7 @@
 
 [日本語 README はこちら](README.ja.md)
 
-A local, read-only Markdown viewer for Windows (and any Node.js platform). Open a single `.md` file or browse a whole folder of notes as a live-reloading, GitHub-flavored, syntax-highlighted, diagram-and-math-rendering site — no build step, no account, no cloud.
+A local Markdown viewer for Windows (and any Node.js platform). Open a single `.md` file or browse a whole folder of notes as a live-reloading, GitHub-flavored, syntax-highlighted, diagram-and-math-rendering site — no build step, no account, no cloud. Primarily for reading: the only things that write back to your file are toggling a task-list checkbox and two text-decoration keyboard shortcuts (everything else is view-only).
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Platform: Windows](https://img.shields.io/badge/platform-Windows-0078D6.svg)
@@ -20,6 +20,9 @@ A local, read-only Markdown viewer for Windows (and any Node.js platform). Open 
 - **Dark / light mode**, persisted, with theme-aware diagrams and code blocks
 - **Search** — in-page find and folder-wide cross-file search
 - **Heading outline** with scroll-spy — a persistent panel on wide screens, a slide-in drawer on narrow ones
+- **Mindmap overview** — toggle the current document into an interactive [Markmap](https://markmap.js.org/) mindmap built from its headings/lists; click a node to jump back to that spot in the normal preview
+- **Task-list checkboxes are clickable** — checking/unchecking a rendered checkbox rewrites the `[ ]`/`[x]` in the source file
+- **Text-decoration shortcuts** — select plain text within a single paragraph or heading and press `Ctrl+Shift+X` for `~~strikethrough~~` or `Ctrl+Shift+U` for `<u>underline</u>`
 - **Full keyboard navigation** — arrow keys, Home/End, and Enter/Space drive the file tree
 - **Print-friendly** — a dedicated print stylesheet for clean PDF export / hard copies
 - **Live reload** — save a file, the browser updates in place
@@ -76,6 +79,9 @@ mdv [path] [options]
 | Find in page | Toolbar search box (shortcut `/`); `Enter`/`Shift+Enter` to cycle, `Esc` to clear |
 | Search all files | Sidebar search box (2+ characters); click a result to open and highlight |
 | Jump to heading | Click an entry in the outline panel (or open it from the toolbar button on narrow screens) |
+| View as mindmap | Toolbar mindmap button; click a node to jump back into the preview at that spot |
+| Toggle a task | Click its checkbox — rewrites `[ ]`/`[x]` in the source file |
+| Decorate selected text | Select text in a single paragraph/heading, then `Ctrl+Shift+X` (strikethrough) or `Ctrl+Shift+U` (underline) |
 | Toggle theme | Top-right button |
 | Copy code | Hover a code block, click "Copy" |
 | Print / export PDF | Your browser's print dialog — a dedicated stylesheet hides the UI chrome |
@@ -105,7 +111,8 @@ Emoji shortcodes (`:smile:`) are already built in via `remark-emoji`, no config 
 - Cross-file search is a plain substring scan — no regex, no index
 - No HTML sanitization (`rehype-raw` allows raw HTML) — this is a viewer for **your own local files**, bound to `127.0.0.1` by default; add `rehype-sanitize` via the config if you'll open untrusted Markdown
 - The "Open folder" feature can re-root the server to any directory the OS user can read, with no allowlist — another reason not to bind beyond `127.0.0.1` on an untrusted network
-- View-only; there is no editor
+- Not a general editor — the only writes are checkbox toggling and the two selection-decoration shortcuts, and both are narrowly scoped: the server always re-verifies the exact text at the target position before writing, and refuses (no write) if it doesn't match. Free-form editing still requires your own text editor; the decoration shortcuts only work within a single paragraph/heading, and are skipped (with an on-screen notice) for selections that span multiple blocks or don't match the source verbatim (e.g. crossing bold/link/math markup)
+- The mindmap view is read/navigate-only — there is no in-mindmap node editing
 
 ## Documentation
 
