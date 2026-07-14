@@ -403,6 +403,28 @@ async function refreshMindmap() {
   }
 }
 
+// ---------- マインドマップ: ノードクリックで本文へジャンプ ----------
+// ステップ5の簡易版代替: ノードの直接編集は行わず、クリックしたノードに対応する
+// 本文側の見出し(完全一致すればそこへ)、それ以外は既存のページ内検索機構で
+// 最初の一致箇所へジャンプする(本文プレビューに切り替えてから遷移する)。
+
+function findHeadingByText(text) {
+  return (state.payload?.headings ?? []).find((h) => h.text === text) ?? null
+}
+
+async function jumpToMindmapNodeText(rawText) {
+  const text = (rawText || '').trim()
+  if (!text) return
+  const heading = findHeadingByText(text)
+  await setMindmapMode(false)
+  if (heading) {
+    document.getElementById(heading.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  } else {
+    $('#mdv-find-input').value = text
+    runFind(text, { jump: true })
+  }
+}
+
 // ---------- コードブロックのコピー ----------
 
 function addCopyButtons(root) {
@@ -1061,6 +1083,10 @@ function bindUI() {
 
   $('#mdv-mindmap-toggle').addEventListener('click', () => setMindmapMode(!isMindmapMode()))
   $('#mdv-mindmap-fit').addEventListener('click', () => state.mindmapInstance?.fit())
+  $('#mdv-mindmap-svg').addEventListener('click', (e) => {
+    const foreign = e.target.closest('.markmap-foreign')
+    if (foreign) jumpToMindmapNodeText(foreign.textContent)
+  })
 
   $('#mdv-doc').addEventListener('change', handleTaskCheckboxChange)
 
