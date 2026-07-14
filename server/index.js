@@ -1,6 +1,6 @@
 import http from 'node:http'
 import path from 'node:path'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
@@ -16,6 +16,7 @@ import { resolveWithin, isMarkdownPath } from './safe-path.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(__dirname, '..')
+const { version: appVersion } = JSON.parse(readFileSync(path.join(appRoot, 'package.json'), 'utf8'))
 
 export async function startServer(opts) {
   const {
@@ -238,7 +239,7 @@ export async function startServer(opts) {
   const url = `http://${host}:${port}/`
 
   const fileCount = ctx.mode === 'dir' ? countFiles(await buildTree(ctx.root)) : 1
-  console.log('MD Viewer v1.0.0')
+  console.log(`MD Viewer v${appVersion}`)
   console.log(`  モード : ${ctx.mode === 'dir' ? 'フォルダ' : '単一ファイル'}`)
   console.log(`  対象   : ${absTarget}`)
   console.log(`  ファイル: ${fileCount} 件`)
