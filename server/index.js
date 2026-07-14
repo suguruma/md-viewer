@@ -8,7 +8,7 @@ import express from 'express'
 import { WebSocketServer } from 'ws'
 import { loadConfig } from './config.js'
 import { createProcessor, renderDoc, invalidateCache, clearCache } from './render.js'
-import { toggleTask } from './write.js'
+import { toggleTask, wrapSelection } from './write.js'
 import { buildTree, countFiles, listMarkdownFiles } from './tree.js'
 import { searchAll } from './search.js'
 import { startWatcher } from './watch.js'
@@ -144,6 +144,24 @@ export async function startServer(opts) {
       if (e?.code === 'ENOENT') return res.status(404).json({ error: 'ファイルが見つかりません' })
       if (e?.status) return res.status(e.status).json({ error: e.message })
       console.error('[toggle-task]', rel, e)
+      res.status(500).json({ error: String(e?.message ?? e) })
+    }
+  })
+
+  // プレビューで選択したテキストをショートカットキーで装飾する(打ち消し線・下線)。
+  // start/end はクライアント側で段落/見出しの原文オフセットから逆算した範囲。
+  app.post('/api/doc/wrap-selection', async (req, res) => {
+    const { path: rel, start, end, expectedText, style } = req.body ?? {}
+    if (typeof rel !== 'string' || typeof expectedText !== 'string' || typeof style !== 'string') {
+      return res.status(400).json({ error: 'path / start / end / expectedText / style を指定してください' })
+    }
+    try {
+      await wrapSelection(ctx, rel, start, end, expectedText, style)
+      res.json({ ok: true })
+    } catch (e) {
+      if (e?.code === 'ENOENT') return res.status(404).json({ error: 'ファイルが見つかりません' })
+      if (e?.status) return res.status(e.status).json({ error: e.message })
+      console.error('[wrap-selection]', rel, e)
       res.status(500).json({ error: String(e?.message ?? e) })
     }
   })

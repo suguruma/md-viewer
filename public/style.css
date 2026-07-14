@@ -497,6 +497,27 @@ html.dark .shiki { background-color: var(--shiki-dark-bg) !important; }
 mark.mdv-find-mark { background: var(--mark-bg); color: inherit; border-radius: 2px; padding: 0 1px; }
 mark.mdv-find-mark.active { background: var(--mark-active-bg); }
 
+/* トースト通知 */
+#mdv-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 12px);
+  max-width: min(80vw, 420px);
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 13px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 80;
+}
+#mdv-toast.show { opacity: 0.96; transform: translate(-50%, 0); }
+
 /* 通知・エラー */
 .mdv-notice {
   padding: 8px 14px;

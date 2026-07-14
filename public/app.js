@@ -224,6 +224,100 @@ async function handleTaskCheckboxChange(e) {
   }
 }
 
+// ---------- 簡易トースト通知 ----------
+
+let toastTimer = null
+
+function showToast(message) {
+  let toast = $('#mdv-toast')
+  if (!toast) {
+    toast = document.createElement('div')
+    toast.id = 'mdv-toast'
+    document.body.appendChild(toast)
+  }
+  toast.textContent = message
+  toast.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2400)
+}
+
+// ---------- 選択範囲のショートカット装飾(打ち消し線・下線) ----------
+// 制約: 単一の段落/見出し(data-src-start/end付き要素)内の選択のみサポートする。
+// 選択テキストと原文の該当オフセットが完全一致する場合のみ書き込む(絵文字・リンク・
+// 強調などの装飾を含むブロックはオフセットがずれるため自然に拒否される)。
+
+function findTaggedBlock(node) {
+  const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node
+  return el?.closest('[data-src-start][data-src-end]') ?? null
+}
+
+// blockEl の先頭から (boundaryNode, boundaryOffset) までの「描画後テキスト」の文字数。
+// 改行(CRLF/LF)がレンダリング後に文字数が変わりうるため、これは正確な原文オフセットでは
+// なく「だいたいの位置」の目安として使う(複数候補がある場合の絞り込みにのみ使用)。
+function approxTextOffsetWithinBlock(blockEl, boundaryNode, boundaryOffset) {
+  const r = document.createRange()
+  r.selectNodeContents(blockEl)
+  r.setEnd(boundaryNode, boundaryOffset)
+  return r.toString().length
+}
+
+async function decorateSelection(style) {
+  const sel = window.getSelection()
+  if (!sel || sel.isCollapsed || sel.rangeCount === 0) return
+  const text = sel.toString()
+  if (!text) return
+  const range = sel.getRangeAt(0)
+
+  const startBlock = findTaggedBlock(range.startContainer)
+  const endBlock = findTaggedBlock(range.endContainer)
+  const doc = $('#mdv-doc')
+  if (!startBlock || startBlock !== endBlock || !doc.contains(startBlock)) {
+    showToast('この範囲は装飾できません(単一の段落・見出し内の平文を選択してください)')
+    return
+  }
+
+  const blockStart = Number(startBlock.dataset.srcStart)
+  const blockEnd = Number(startBlock.dataset.srcEnd)
+  const approx = approxTextOffsetWithinBlock(startBlock, range.startContainer, range.startOffset)
+
+  // 原文(改行コードを含む正確なバイト列)を取得し、選択テキストをその中から探す。
+  // レンダリング後の文字列と原文は改行の扱いなどで文字数がずれうるため、DOM上の文字数を
+  // 足し引きするのではなく「原文中で実際に一致する位置」を探す方式にする。
+  let raw
+  try {
+    const res = await fetch('/raw/' + encodePath(state.current))
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    raw = await res.text()
+  } catch {
+    showToast('元のテキストの取得に失敗しました')
+    return
+  }
+  const blockRaw = raw.slice(blockStart, blockEnd)
+
+  const occurrences = []
+  for (let i = blockRaw.indexOf(text); i !== -1; i = blockRaw.indexOf(text, i + 1)) occurrences.push(i)
+  if (occurrences.length === 0) {
+    showToast('この範囲は装飾できません(強調・リンク・数式などを含む選択は非対応です)')
+    return
+  }
+  // 複数箇所に一致する場合は、DOM上のおおよその位置に最も近い出現を採用する
+  occurrences.sort((a, b) => Math.abs(a - approx) - Math.abs(b - approx))
+  const start = blockStart + occurrences[0]
+  const end = start + text.length
+
+  try {
+    const res = await fetch('/api/doc/wrap-selection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: state.current, start, end, expectedText: text, style }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) showToast(data.error ?? `装飾に失敗しました (HTTP ${res.status})`)
+  } catch (err) {
+    showToast('装飾に失敗しました: ' + (err?.message ?? err))
+  }
+}
+
 // ---------- Mermaid ----------
 
 async function renderMermaidBlocks(root) {
@@ -995,6 +1089,12 @@ function bindUI() {
       findInput.select()
     } else if (e.key === 'Escape' && isOutlineDrawerOpen()) {
       toggleOutlineDrawer(false)
+    } else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'x') {
+      e.preventDefault()
+      decorateSelection('strike')
+    } else if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'u') {
+      e.preventDefault()
+      decorateSelection('underline')
     }
   })
 

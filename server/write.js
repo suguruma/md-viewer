@@ -50,3 +50,36 @@ export async function toggleTask(ctx, relInput, start, end, wasChecked) {
   invalidateCache(rel)
   return { checked: !wasChecked }
 }
+
+// サーバー側で許可する装飾の語彙。クライアントには「どの装飾か」だけを送らせ、
+// 実際に書き込むマークアップ文字列は常にここで決める(クライアント指定の任意文字列は書き込まない)。
+const WRAP_STYLES = {
+  strike: { before: '~~', after: '~~' },
+  underline: { before: '<u>', after: '</u>' },
+}
+
+// 選択範囲のテキストを装飾記法で囲む(打ち消し線・下線)。
+// start/end は該当ブロック(段落・見出し)の原文オフセットから逆算した選択範囲。
+// expectedText と実ファイルの内容が完全一致する場合のみ書き換える(ズレていれば409)。
+export async function wrapSelection(ctx, relInput, start, end, expectedText, style) {
+  const wrap = WRAP_STYLES[style]
+  if (!wrap) {
+    const err = new Error('style が不正です')
+    err.status = 400
+    throw err
+  }
+  const { rel, abs } = resolveMarkdownFile(ctx, relInput)
+  const content = await readFile(abs, 'utf8')
+  assertRange(content, start, end)
+
+  if (!expectedText || content.slice(start, end) !== expectedText) {
+    const err = new Error('内容が変更されています。再読み込みしてください')
+    err.status = 409
+    throw err
+  }
+
+  const next = content.slice(0, start) + wrap.before + expectedText + wrap.after + content.slice(end)
+  await writeFile(abs, next, 'utf8')
+  invalidateCache(rel)
+  return {}
+}
