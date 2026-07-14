@@ -188,6 +188,42 @@ function interceptInPageAnchors(root) {
   }
 }
 
+// ---------- タスクリストの同期 ----------
+// プレビューのチェックボックスをクリックした際、サーバー経由で元のMarkdownの [ ]/[x] を書き換える。
+// #mdv-doc は再描画のたびに innerHTML ごと差し替わるため、リスナーは親要素に一度だけ委譲で登録する。
+
+async function handleTaskCheckboxChange(e) {
+  const checkbox = e.target
+  if (!checkbox.matches?.('.mdv-task-checkbox')) return
+  const li = checkbox.closest('li[data-task-start][data-task-end]')
+  if (!li) return
+
+  const start = Number(li.dataset.taskStart)
+  const end = Number(li.dataset.taskEnd)
+  const wasChecked = !checkbox.checked // change 発火時には既に反転済みなので、反転前はその逆
+  const rel = state.current
+
+  checkbox.disabled = true
+  try {
+    const res = await fetch('/api/doc/toggle-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: rel, start, end, wasChecked }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      checkbox.checked = wasChecked
+      window.alert(data.error ?? `更新に失敗しました (HTTP ${res.status})`)
+    }
+    // 成功時はファイル監視経由の doc-changed 通知で再描画される
+  } catch (err) {
+    checkbox.checked = wasChecked
+    window.alert('更新に失敗しました: ' + (err?.message ?? err))
+  } finally {
+    checkbox.disabled = false
+  }
+}
+
 // ---------- Mermaid ----------
 
 async function renderMermaidBlocks(root) {
@@ -931,6 +967,8 @@ function bindUI() {
 
   $('#mdv-mindmap-toggle').addEventListener('click', () => setMindmapMode(!isMindmapMode()))
   $('#mdv-mindmap-fit').addEventListener('click', () => state.mindmapInstance?.fit())
+
+  $('#mdv-doc').addEventListener('change', handleTaskCheckboxChange)
 
   const findInput = $('#mdv-find-input')
   findInput.addEventListener(

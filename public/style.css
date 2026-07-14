@@ -405,6 +405,8 @@ body.mindmap-mode #mdv-mindmap { display: block; }
 .markdown-body tr:nth-child(2n) td { background: color-mix(in srgb, var(--code-bg) 55%, transparent); }
 
 .markdown-body input[type="checkbox"] { margin-right: 6px; }
+.markdown-body input.mdv-task-checkbox { cursor: pointer; }
+.markdown-body input.mdv-task-checkbox:disabled { cursor: wait; opacity: 0.6; }
 .markdown-body ul:has(> li > input[type="checkbox"]) { list-style: none; padding-left: 0.6em; }
 .markdown-body li:has(> input[type="checkbox"]) { list-style: none; }
 

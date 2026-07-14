@@ -47,6 +47,62 @@ function remarkExtractFrontmatter() {
   }
 }
 
+// GFMタスクリストの listItem に、チェックボックス記号([ ]/[x])の原文中の正確な
+// 文字オフセットを data-task-start/data-task-end として付与する(<li>に反映される)。
+// プレビュー側のクリックから元のMarkdownを書き換えるための位置情報。
+function remarkTagTaskCheckboxes() {
+  return (tree, file) => {
+    const raw = String(file.value)
+    visit(tree, 'listItem', (node) => {
+      if (node.checked !== true && node.checked !== false) return
+      if (!node.position) return
+      const start = node.position.start.offset
+      const window = raw.slice(start, start + 12)
+      const m = /\[[ xX]\]/.exec(window)
+      if (!m) return
+      const markStart = start + m.index
+      const markEnd = markStart + 3
+      node.data ??= {}
+      node.data.hProperties = {
+        ...(node.data.hProperties ?? {}),
+        'data-task-start': markStart,
+        'data-task-end': markEnd,
+      }
+    })
+  }
+}
+
+// 段落・見出しに、原文中の開始/終了オフセットを data-src-start/data-src-end として付与する。
+// プレビュー側でのテキスト選択位置を元のMarkdown文字位置に逆算するための土台。
+function remarkTagBlockPositions() {
+  return (tree) => {
+    visit(tree, (node) => {
+      if (node.type !== 'paragraph' && node.type !== 'heading') return
+      if (!node.position) return
+      node.data ??= {}
+      node.data.hProperties = {
+        ...(node.data.hProperties ?? {}),
+        'data-src-start': node.position.start.offset,
+        'data-src-end': node.position.end.offset,
+      }
+    })
+  }
+}
+
+// remarkTagTaskCheckboxes が付けた <li> の子 <input type="checkbox"> から disabled を外し、
+// クリック操作でチェック状態を変更できるようにする。クラスは委譲イベントの目印。
+function rehypeEnableTaskCheckboxes() {
+  return (tree) => {
+    visit(tree, 'element', (node) => {
+      if (node.tagName !== 'input') return
+      if (node.properties?.type !== 'checkbox') return
+      delete node.properties.disabled
+      const cls = Array.isArray(node.properties.className) ? node.properties.className : []
+      node.properties.className = [...cls, 'mdv-task-checkbox']
+    })
+  }
+}
+
 // ```mermaid ブロックを <div class="mermaid-block"><pre class="mermaid-src">…</pre></div> に変換。
 // レンダリングはクライアント側(mermaid.js は DOM が必要)。pre はJS無効時のフォールバック表示を兼ねる。
 function rehypeMermaidBlocks() {
@@ -170,6 +226,8 @@ export function createProcessor(config) {
     .use(remarkGfm)
     .use(remarkEmoji, { accessible: true })
     .use(remarkMath)
+    .use(remarkTagTaskCheckboxes)
+    .use(remarkTagBlockPositions)
 
   for (const [fn, opts] of config.remarkPlugins) p.use(fn, opts)
 
@@ -179,6 +237,7 @@ export function createProcessor(config) {
     footnoteBackLabel: '本文に戻る',
   })
     .use(rehypeRaw)
+    .use(rehypeEnableTaskCheckboxes)
     .use(rehypeSlug)
     .use(rehypeKatex, { errorColor: '#d73a49' })
     .use(rehypeMermaidBlocks)

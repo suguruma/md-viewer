@@ -8,6 +8,7 @@ import express from 'express'
 import { WebSocketServer } from 'ws'
 import { loadConfig } from './config.js'
 import { createProcessor, renderDoc, invalidateCache, clearCache } from './render.js'
+import { toggleTask } from './write.js'
 import { buildTree, countFiles, listMarkdownFiles } from './tree.js'
 import { searchAll } from './search.js'
 import { startWatcher } from './watch.js'
@@ -125,6 +126,24 @@ export async function startServer(opts) {
       if (e?.code === 'ENOENT') return res.status(404).json({ error: 'ファイルが見つかりません' })
       if (e?.status === 403) return res.status(403).json({ error: 'アクセスできないパスです' })
       console.error('[render]', rel, e)
+      res.status(500).json({ error: String(e?.message ?? e) })
+    }
+  })
+
+  // プレビューのタスクリストチェックボックスをクリックした際、元のMarkdownの
+  // [ ]/[x] を書き換える(このアプリで唯一のファイル書き込み系API)。
+  app.post('/api/doc/toggle-task', async (req, res) => {
+    const { path: rel, start, end, wasChecked } = req.body ?? {}
+    if (typeof rel !== 'string' || typeof wasChecked !== 'boolean') {
+      return res.status(400).json({ error: 'path / start / end / wasChecked を指定してください' })
+    }
+    try {
+      const result = await toggleTask(ctx, rel, start, end, wasChecked)
+      res.json({ ok: true, ...result })
+    } catch (e) {
+      if (e?.code === 'ENOENT') return res.status(404).json({ error: 'ファイルが見つかりません' })
+      if (e?.status) return res.status(e.status).json({ error: e.message })
+      console.error('[toggle-task]', rel, e)
       res.status(500).json({ error: String(e?.message ?? e) })
     }
   })
