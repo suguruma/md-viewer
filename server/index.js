@@ -38,7 +38,10 @@ export async function startServer(opts) {
   // クライアントに配るベンダー資産(CDN不使用・オフライン動作)
   const katexDist = path.join(appRoot, 'node_modules', 'katex', 'dist')
   const mermaidDist = path.join(appRoot, 'node_modules', 'mermaid', 'dist')
-  if (!existsSync(katexDist) || !existsSync(mermaidDist)) {
+  const d3Dist = path.join(appRoot, 'node_modules', 'd3', 'dist')
+  const markmapViewDist = path.join(appRoot, 'node_modules', 'markmap-view', 'dist', 'browser')
+  const markmapLibDist = path.join(appRoot, 'node_modules', 'markmap-lib', 'dist', 'browser')
+  if (!existsSync(katexDist) || !existsSync(mermaidDist) || !existsSync(d3Dist) || !existsSync(markmapViewDist) || !existsSync(markmapLibDist)) {
     throw new Error('依存パッケージが見つかりません。先に `npm install` を実行してください。')
   }
 
@@ -63,6 +66,9 @@ export async function startServer(opts) {
   app.use(express.static(path.join(appRoot, 'public')))
   app.use('/vendor/katex', express.static(katexDist))
   app.use('/vendor/mermaid', express.static(mermaidDist))
+  app.use('/vendor/d3', express.static(d3Dist))
+  app.use('/vendor/markmap-view', express.static(markmapViewDist))
+  app.use('/vendor/markmap-lib', express.static(markmapLibDist))
 
   app.get('/api/config', (req, res) => {
     res.json({

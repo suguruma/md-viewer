@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="/vendor/katex/katex.min.css">
   <link rel="stylesheet" href="/style.css">
   <script src="/vendor/mermaid/mermaid.min.js" defer></script>
+  <script src="/vendor/d3/d3.min.js" defer></script>
+  <script src="/vendor/markmap-view/index.js" defer></script>
+  <script src="/vendor/markmap-lib/index.iife.js" defer></script>
   <script type="module" src="/app.js"></script>
 </head>
 <body>
@@ -30,6 +33,9 @@
     </div>
     <button id="mdv-outline-toggle" class="mdv-icon-btn" title="目次を表示">
       <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M3 4h10v1.5H3zM3 7.25h10v1.5H3zM3 10.5h6V12H3z"/></svg>
+    </button>
+    <button id="mdv-mindmap-toggle" class="mdv-icon-btn" title="マインドマップ表示切替" aria-pressed="false">
+      <svg viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M2 7.25a1.75 1.75 0 1 1 2.4 1.63l2.1 2.62a1.74 1.74 0 0 1 1.9.24l2.62-1.9a1.75 1.75 0 1 1 .78 1.1l-2.62 1.9a1.75 1.75 0 1 1-3.13-.98l-2.1-2.62A1.75 1.75 0 0 1 2 7.25zM7.5 2a1.75 1.75 0 1 1 1 3.19v1.62h-1.5V5.19A1.75 1.75 0 0 1 7.5 2z"/></svg>
     </button>
     <button id="mdv-theme-toggle" class="mdv-icon-btn" title="ダーク/ライト切替">
       <svg class="icon-sun" viewBox="0 0 16 16" width="16" height="16"><path fill="currentColor" d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm0 1.5a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1A.75.75 0 0 1 8 12.5zm0-11a.75.75 0 0 1 .75.75v1a.75.75 0 0 1-1.5 0v-1A.75.75 0 0 1 8 1.5zm6.5 5.75a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 1 0-1.5zm-12 0a.75.75 0 0 1 0 1.5h-1a.75.75 0 0 1 0-1.5zm10.03-4.28a.75.75 0 0 1 0 1.06l-.7.71a.75.75 0 1 1-1.07-1.06l.71-.71a.75.75 0 0 1 1.06 0zM4.24 11.76a.75.75 0 0 1 0 1.06l-.7.71a.75.75 0 0 1-1.07-1.06l.71-.71a.75.75 0 0 1 1.06 0zm8.29 1.77l-.7-.71a.75.75 0 1 1 1.06-1.06l.71.7a.75.75 0 1 1-1.07 1.07zM4.24 4.24l-.7-.71a.75.75 0 0 1 1.06-1.06l.71.7A.75.75 0 1 1 4.24 4.24z"/></svg>
@@ -56,6 +62,10 @@
 
     <main id="mdv-content">
       <article id="mdv-doc" class="markdown-body"></article>
+      <div id="mdv-mindmap">
+        <button id="mdv-mindmap-fit" class="mdv-mindmap-fit-btn" type="button" title="全体表示に合わせる">画面に合わせる</button>
+        <svg id="mdv-mindmap-svg"></svg>
+      </div>
     </main>
 
     <div id="mdv-outline-backdrop"></div>

@@ -17,9 +17,11 @@ const state = {
   wsBackoff: 500,
   wsWasConnected: false,
   pendingFind: null,    // 横断検索から遷移した際にページ内検索へ引き継ぐ語
+  mindmapInstance: null, // Markmap インスタンス(ファイル切替時は setData で使い回す)
 }
 
 let mermaidSeq = 0
+let mindmapSeq = 0
 
 // ---------- ユーティリティ ----------
 
@@ -133,6 +135,7 @@ async function applyDoc(payload, frag, { preserveScroll = false } = {}) {
   interceptInPageAnchors(art)
   addCopyButtons(art)
   await renderMermaidBlocks(art)
+  if (isMindmapMode()) await refreshMindmap()
 
   if (preserveScroll) {
     content.scrollTop = prevScroll
@@ -220,6 +223,53 @@ async function renderMermaidBlocks(root) {
       pre.textContent = src
       block.append(err, pre)
     }
+  }
+}
+
+// ---------- マインドマップ表示 ----------
+// markmap-lib(markdown-it 独自パーサー)で生 Markdown を階層データに変換し、
+// markmap-view(d3ベース)で #mdv-mindmap-svg に描画する。本文のremarkパイプラインとは独立。
+
+function isMindmapMode() {
+  return document.body.classList.contains('mindmap-mode')
+}
+
+async function setMindmapMode(on) {
+  document.body.classList.toggle('mindmap-mode', on)
+  $('#mdv-mindmap-toggle').setAttribute('aria-pressed', String(on))
+  if (on) await refreshMindmap()
+}
+
+async function refreshMindmap() {
+  if (!state.current) return
+  if (!window.markmap?.Transformer || !window.markmap?.Markmap) {
+    $('#mdv-mindmap-svg').replaceChildren()
+    return
+  }
+  const seq = ++mindmapSeq
+  const targetPath = state.current
+  let raw
+  try {
+    const res = await fetch('/raw/' + encodePath(targetPath))
+    if (!res.ok) throw new Error('HTTP ' + res.status)
+    raw = await res.text()
+  } catch {
+    return
+  }
+  // 取得中に別のファイルへ遷移していたら古い結果は捨てる
+  if (seq !== mindmapSeq || state.current !== targetPath) return
+
+  const transformer = new window.markmap.Transformer()
+  const { root } = transformer.transform(raw)
+
+  if (state.mindmapInstance) {
+    await state.mindmapInstance.setData(root)
+    state.mindmapInstance.fit()
+  } else {
+    state.mindmapInstance = window.markmap.Markmap.create($('#mdv-mindmap-svg'), {
+      autoFit: true,
+      duration: 200,
+    }, root)
   }
 }
 
@@ -878,6 +928,9 @@ function bindUI() {
 
   $('#mdv-outline-toggle').addEventListener('click', () => toggleOutlineDrawer())
   $('#mdv-outline-backdrop').addEventListener('click', () => toggleOutlineDrawer(false))
+
+  $('#mdv-mindmap-toggle').addEventListener('click', () => setMindmapMode(!isMindmapMode()))
+  $('#mdv-mindmap-fit').addEventListener('click', () => state.mindmapInstance?.fit())
 
   const findInput = $('#mdv-find-input')
   findInput.addEventListener(

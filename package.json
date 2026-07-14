@@ -19,6 +19,8 @@
     "chokidar": "^4.0.1",
     "express": "^5.1.0",
     "katex": "^0.16.11",
+    "markmap-lib": "^0.18.12",
+    "markmap-view": "^0.18.12",
     "mermaid": "^11.0.0",
     "rehype-katex": "^7.0.1",
     "rehype-raw": "^7.0.0",

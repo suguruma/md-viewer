@@ -1,6 +1,7 @@
 node_modules/
 *.log
 .DS_Store
+.claude/
 
 # ビルド成果物(GitHub Releasesへ添付。リポジトリには含めない)
 dist/
