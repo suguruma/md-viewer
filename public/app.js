@@ -1187,7 +1187,11 @@ function bindUI() {
   $('#mdv-mindmap-fit').addEventListener('click', () => state.mindmapInstance?.fit())
   $('#mdv-mindmap-svg').addEventListener('click', (e) => {
     const foreign = e.target.closest('.markmap-foreign')
-    if (foreign) jumpToMindmapNodeText(foreign.textContent)
+    if (!foreign) return
+    // ノード内のリンクは既定の遷移をさせない(相対リンクはサーバー直下で解決されて404になり、
+    // ビューアーを離れてしまう)。リンク先は本文側で開けるため、他のノードと同様に該当箇所へジャンプする。
+    if (e.target.closest('a')) e.preventDefault()
+    jumpToMindmapNodeText(foreign.textContent)
   })
 
   $('#mdv-popout-toggle').addEventListener('click', togglePopout)
