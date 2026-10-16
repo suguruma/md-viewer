@@ -122,6 +122,7 @@ export default {
 - [docs/FEATURES.md](docs/FEATURES.md) / [docs/FEATURES.ja.md](docs/FEATURES.ja.md) — 機能仕様書(英語/日本語)
 - [docs/DESIGN.md](docs/DESIGN.md) — 技術選定・アーキテクチャ・設計判断の理由
 - [docs/PROCESS.md](docs/PROCESS.md) — 開発プロセスの記録
+- [docs/TODO.md](docs/TODO.md) — 現状・残タスク・再開用メモ
 
 ## ライセンス
 

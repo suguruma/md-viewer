@@ -98,8 +98,10 @@
 
 ## 次回セッションへの推奨指示(継続開発する場合)
 
-1. `cd md-viewer && npm run sample` で現状確認から始める(全機能のリグレッション確認を兼ねる)
-2. 未着手の改善候補: (a) API層スモークテストの自動化 (b) 横断検索の正規表現/AND検索 (c) ツリーのキーボード操作 (d) 印刷CSS (e) frontmatterのメタ表示
-3. `git init` + 初回コミット推奨(現状はGit管理外)
+> 2026-10-17 更新: 初版(v1.0)時点の記述が実態と乖離したため更新した。最新の現状・残タスク・再開手順は [TODO.md](TODO.md) を参照。
+
+1. 現状・残タスクは [TODO.md](TODO.md) で確認する。動作確認は `cd md-viewer && npm run sample` から始める(全機能のリグレッション確認を兼ねる)
+2. 旧候補のうち、ツリーのキーボード操作・印刷CSS・frontmatterのメタ表示は実装済み。API層スモークテストの自動化と横断検索の正規表現/AND検索は未着手(TODO.md の T8 と §6)
+3. Git 管理は導入済み(GitHub: suguruma/md-viewer)
 4. 依存更新時は DESIGN.md §3 の「順序が重要」なパイプラインを崩さないこと。特に rehype-raw→slug→katex→mermaid分離→未知言語除去→shiki の順
 5. Windows以外で使う場合は起動(`bin/mdv.js` のブラウザオープン)と監視の動作確認を先に

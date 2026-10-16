@@ -2,7 +2,7 @@
 
 [日本語版はこちら / Japanese version](FEATURES.ja.md)
 
-Version: 1.4.0
+Version: 1.4.1
 Scope: Windows-focused local Markdown viewer (also runs on macOS/Linux from source)
 
 ## 1. Overview

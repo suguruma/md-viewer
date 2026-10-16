@@ -2,7 +2,7 @@
 
 [English version here](FEATURES.md)
 
-バージョン: 1.4.0
+バージョン: 1.4.1
 対象: Windows向けローカルMarkdownビューアー(ソースからならmacOS/Linuxでも動作)
 
 ## 1. 概要

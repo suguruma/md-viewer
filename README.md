@@ -122,6 +122,7 @@ Emoji shortcodes (`:smile:`) are already built in via `remark-emoji`, no config 
 - [docs/FEATURES.md](docs/FEATURES.md) / [docs/FEATURES.ja.md](docs/FEATURES.ja.md) — full feature specification (English / Japanese)
 - [docs/DESIGN.md](docs/DESIGN.md) — technology choices, architecture, rationale
 - [docs/PROCESS.md](docs/PROCESS.md) — development process log
+- [docs/TODO.md](docs/TODO.md) — current status, open tasks, and resume notes (Japanese)
 
 ## License
 
