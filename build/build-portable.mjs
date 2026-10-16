@@ -5,7 +5,7 @@
 import { existsSync, mkdirSync, rmSync, cpSync, copyFileSync, writeFileSync, readFileSync, statSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(__dirname, '..')
@@ -15,6 +15,9 @@ const version = pkg.version
 const distDir = path.join(root, 'dist')
 const portableDir = path.join(distDir, 'portable')
 const appDir = path.join(portableDir, 'app')
+
+// app/ にコピーする対象(配布物に含まれるソース)。未コミット確認と共通で使う。
+const APP_ITEMS = ['bin', 'server', 'public', 'sample', 'md-viewer.config.mjs', 'package.json', 'README.md', 'README.ja.md', 'LICENSE']
 
 // mermaid / markmap-lib / markmap-view はいずれもサーバーコードから require/import されず、
 // ビルド済みの dist 配下を express.static で静的配信されるだけ(server/index.js 参照)。
@@ -42,6 +45,35 @@ function log(msg) {
 function run(cmd, args, opts = {}) {
   log(`> ${cmd} ${args.join(' ')}`)
   execFileSync(cmd, args, { stdio: 'inherit', cwd: root, ...opts })
+}
+
+// shell 経由でしか起動できないコマンド(Windows の npx.cmd など)用。
+// shell:true と引数配列の併用は Node の DEP0190 警告の対象になるため、1本のコマンド文字列にして
+// execSync(常に shell 経由)で実行する。コマンドは本スクリプト内で組み立てた固定値のみで
+// ユーザー入力を含まない(パスは空白を含みうるので呼び出し側で二重引用符で囲む)。
+function runShell(commandLine) {
+  log(`> ${commandLine}`)
+  execSync(commandLine, { stdio: 'inherit', cwd: root })
+}
+
+// 配布物に入るファイルが未コミット/未追跡だと、ソースから再ビルドした成果物と中身が食い違う。
+// 手元の試験ビルドも許容するため、警告だけ出して処理は止めない(厳格化はオーナー判断)。
+function warnIfUncommitted(names) {
+  let out
+  try {
+    out = execFileSync('git', ['status', '--porcelain', '--', ...names], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+  } catch {
+    log('git の状態を取得できないため、未コミット確認をスキップ')
+    return
+  }
+  const lines = out.split('\n').filter(Boolean)
+  if (lines.length === 0) return
+  log('警告: 配布物に含まれるファイルに未コミット/未追跡のものがあります(リリースビルドはコミット後に実行してください):')
+  for (const line of lines) console.log(`  ${line}`)
 }
 
 function dirSizeMB(dir) {
@@ -120,6 +152,9 @@ function buildReadMeFirstText(version) {
   (元のファイルの [ ]/[x] が書き換わります)
 ・プレビュー上でテキストを選択し、Ctrl+Shift+X で打ち消し線、
   Ctrl+Shift+U で下線を付与(単一の段落・見出し内の選択のみ対応)
+・ツールバーの「プレビューを別ウィンドウで開く」ボタンで、プレビューだけを
+  別ウィンドウに表示(2台目のモニタ向け)。表示中のファイル・テーマ・
+  マインドマップ表示はメイン画面に連動します
 ・ファイルを保存すると自動で画面が更新される(ライブリロード)
 ・印刷・PDF保存にも対応(ブラウザの印刷機能をお使いください)
 
@@ -179,6 +214,9 @@ function findSigntool() {
   return null
 }
 
+// ---------- 0. 未コミット確認(警告のみ) ----------
+warnIfUncommitted(APP_ITEMS)
+
 // ---------- 1. クリーン ----------
 log('dist/portable をクリーンアップ')
 rmSync(portableDir, { recursive: true, force: true })
@@ -207,19 +245,19 @@ if (signtool) {
 }
 
 // ---------- 4. postject で blob を注入 ----------
-// Windows の npx.cmd はバッチファイルのため shell 経由でないと EINVAL になる。
-// 引数はすべて本スクリプト内で組み立てた固定値(パスに空白なし)でユーザー入力を含まないため、
-// shell:true によるエスケープ省略のリスクはない。
-run('npx', [
-  '--yes', 'postject',
-  mdvExe, 'NODE_SEA_BLOB', 'build/sea-prep.blob',
-  '--sentinel-fuse', 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
-  '--overwrite',
-], { shell: true })
+// Windows の npx.cmd はバッチファイルのため shell 経由でないと EINVAL になる(runShell 参照)。
+runShell(
+  [
+    'npx --yes postject',
+    `"${mdvExe}"`, 'NODE_SEA_BLOB', 'build/sea-prep.blob',
+    '--sentinel-fuse', 'NODE_SEA_FUSE_fce680ab2cc467b6e072b8b5df1996b2',
+    '--overwrite',
+  ].join(' '),
+)
 
 // ---------- 5. app/ 一式をコピー ----------
 log('app/ 一式をコピー')
-for (const name of ['bin', 'server', 'public', 'sample', 'md-viewer.config.mjs', 'package.json', 'README.md', 'README.ja.md', 'LICENSE']) {
+for (const name of APP_ITEMS) {
   const src = path.join(root, name)
   if (!existsSync(src)) continue
   const dest = path.join(appDir, name)
