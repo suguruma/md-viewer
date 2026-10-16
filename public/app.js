@@ -65,12 +65,18 @@ function initTheme() {
   document.documentElement.classList.toggle('dark', state.theme === 'dark')
 }
 
-async function toggleTheme() {
-  state.theme = state.theme === 'dark' ? 'light' : 'dark'
-  document.documentElement.classList.toggle('dark', state.theme === 'dark')
-  localStorage.setItem('mdv.theme', state.theme)
-  // mermaid はテーマをSVGに焼き込むため、本文を作り直して再描画する
+// テーマを反映する(トグル操作と、ポップアウトでのメインからの同期で共通)。
+// mermaid はテーマをSVGに焼き込むため、クラス切替だけでなく本文も作り直して再描画する。
+async function applyTheme(theme) {
+  state.theme = theme
+  document.documentElement.classList.toggle('dark', theme === 'dark')
   if (state.payload) await applyDoc(state.payload, null, { preserveScroll: true })
+}
+
+async function toggleTheme() {
+  const next = state.theme === 'dark' ? 'light' : 'dark'
+  localStorage.setItem('mdv.theme', next)
+  await applyTheme(next)
   broadcastState()
 }
 
@@ -458,9 +464,8 @@ function broadcastState() {
 // ポップアウト側: メインからの通知を受けて表示状態を追従させる。
 async function applyRemoteState(msg) {
   if (!msg || msg.type !== 'state') return
-  if (typeof msg.theme === 'string' && msg.theme !== state.theme) {
-    state.theme = msg.theme
-    document.documentElement.classList.toggle('dark', state.theme === 'dark')
+  if ((msg.theme === 'light' || msg.theme === 'dark') && msg.theme !== state.theme) {
+    await applyTheme(msg.theme)
   }
   if (typeof msg.path === 'string' && msg.path && msg.path !== state.current) {
     setHash(msg.path)
