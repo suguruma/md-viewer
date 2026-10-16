@@ -19,6 +19,7 @@ author: suguruma
 | [code.md](code.md) | シンタックスハイライト、コピー機能 |
 | [mermaid.md](mermaid.md) | Mermaid ダイアグラム |
 | [math.md](math.md) | KaTeX 数式 |
+| [mindmap.md](mindmap.md) | マインドマップ俯瞰表示 |
 | [notes/tips.md](notes/tips.md) | 相対リンク、階層ナビゲーション |
 
 ## GFM(GitHub Flavored Markdown)
