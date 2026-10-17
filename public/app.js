@@ -449,12 +449,15 @@ async function jumpToMindmapNodeText(rawText) {
 // 各ウィンドウが独自に持つ /ws のライブリロードで反映されるため、ここで運ぶのは
 // 表示状態のみで生Markdownやレンダリング結果そのものは送らない。
 
-// 表示状態をポップアウトへ通知する(ポップアウト自身は送信しない。送信しても
-// ポップアウト側は自分の現在状態と同じであれば何もしないため、ループはしない)。
+// 表示状態をポップアウトへ通知する。方向はメイン→ポップアウトの一方向で、ポップアウトは
+// 'state' を送らない(ループしない)。ポップアウトが送るのは起動時の 'hello'(現在状態の
+// 再送依頼)だけで、メインが 'state' で応える。root は、切替先のフォルダに同じ相対パスの
+// 文書がある場合に取り違えないために含める。
 function broadcastState() {
   if (isPopout || !syncChannel) return
   syncChannel.postMessage({
     type: 'state',
+    root: state.rootPath,
     path: state.current,
     theme: state.theme,
     mindmap: isMindmapMode(),
@@ -464,11 +467,19 @@ function broadcastState() {
 // ポップアウト側: メインからの通知を受けて表示状態を追従させる。
 async function applyRemoteState(msg) {
   if (!msg || msg.type !== 'state') return
+  // フォルダが切り替わった場合は、相対パスが同じでも別の文書なので読み直す
+  const rootChanged = typeof msg.root === 'string' && msg.root !== state.rootPath
+  if (typeof msg.root === 'string') state.rootPath = msg.root
   if ((msg.theme === 'light' || msg.theme === 'dark') && msg.theme !== state.theme) {
     await applyTheme(msg.theme)
   }
-  if (typeof msg.path === 'string' && msg.path && msg.path !== state.current) {
-    setHash(msg.path)
+  if (typeof msg.path === 'string' && msg.path) {
+    if (msg.path !== state.current || rootChanged) setHash(msg.path)
+  } else if (rootChanged) {
+    // 切替先のフォルダに .md が無い
+    state.current = null
+    state.payload = null
+    renderEmptyState()
   }
   if (typeof msg.mindmap === 'boolean' && msg.mindmap !== isMindmapMode()) {
     await setMindmapMode(msg.mindmap)
@@ -961,6 +972,7 @@ async function changeDir(absPath, { silent = false } = {}) {
   } else {
     history.replaceState(null, '', location.pathname + location.search)
     renderEmptyState()
+    broadcastState() // ポップアウトにも「ファイルなし」を伝える
   }
   return true
 }
@@ -1266,10 +1278,22 @@ async function boot() {
     if (syncChannel) syncChannel.onmessage = (ev) => applyRemoteState(ev.data)
     connectWS()
     window.addEventListener('hashchange', onHashChange)
+    // 以降のフォルダ切替を検知できるよう、現在のルートを控えておく
+    const popoutCfg = await fetchJSON('/api/config').catch(() => null)
+    if (popoutCfg) state.rootPath = popoutCfg.rootPath
     const parsed = parseHash()
     if (parsed) await loadDoc(parsed.rel, parsed.frag)
     if (new URLSearchParams(location.search).get('mindmap') === '1') await setMindmapMode(true)
+    // 再読込などでURL上の初期値が古くなっていても、メインの現在状態に追従し直す
+    syncChannel?.postMessage({ type: 'hello' })
     return
+  }
+
+  // ポップアウトの起動・再読込時に、現在の表示状態の再送を求められたら応じる
+  if (syncChannel) {
+    syncChannel.onmessage = (ev) => {
+      if (ev.data?.type === 'hello') broadcastState()
+    }
   }
 
   const cfg = await fetchJSON('/api/config')
