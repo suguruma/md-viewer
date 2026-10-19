@@ -354,3 +354,25 @@ T13 の独立した確認(2026-10-19)で、Host / Origin の検査では塞げ�
 - **`Host` が 2 つあると、Node は最初の値を使う**: ブラウザは `Host` を 2 つ送れない。最後の値を使うプロキシの背後に置くと解釈がずれるが、そのプロキシが攻撃者の `Host` を通すことが前提になる。
 - **絶対形式の要求先(`GET http://evil.example/ HTTP/1.1` に `Host: 127.0.0.1`)は、`Host` で判定する**: RFC 9112 では要求先を使う決まりだが、ブラウザが元のサーバーにこの形を直接送ることはなく、プロキシは要求先の名前を `Host` にして転送する(その名前で断る)。
 - **古い WebSocket のプロトコル(version 8)は、`Origin` でなく `Sec-WebSocket-Origin` を使う**: ガードは `Origin` だけを見るので、`Sec-WebSocket-Origin` だけの握手は通る。今のブラウザは version 13 で `Origin` を付けるので、他サイトのページは、この握手を作れない。
+
+## 12. 依存パッケージの更新と `npm audit` の読み方の設計判断(追記, 2026-10-19)
+
+### 12.1 `npm audit` の件数は、実際に動くコードの安全とは一致しない
+
+`npm audit` は、`package-lock.json` が指す `node_modules` のパッケージの版を数える。ところが、ブラウザで動くのは `node_modules` のパッケージではなく、束ね直した実ファイルで、配布物(ポータブル版・インストーラー)に入るのもそのファイルだけである(§6.2、§9.7)。
+
+- `mermaid.min.js` は DOMPurify を同梱する(Mermaid 11.17.2 の束では 3.4.12)。`node_modules/dompurify`(同じ時点で 3.4.17)とは別物で、ポータブル版は後者を含めない。`npm audit` の dompurify の指摘は、動いているコードの指摘ではない。
+- `markmap-lib` のブラウザ用の束(`dist/browser/index.iife.js`)は markdown-it を同梱する。`markmap-lib` は 0.18.12 が最新で、束の中の版は更新できない。
+- サーバーで実行されるのは `node_modules` の版(`express` と、その依存の `qs`・`proxy-addr` ほか)である。
+
+### 12.2 更新のあとの確認(T14 で行った方法)
+
+1. 束ねファイルの中の版を、実ファイルで確かめる(`mermaid.min.js` の DOMPurify の版、`index.iife.js` のハッシュ)。
+2. 助言が対象にする機能を、このアプリが使っているかを確かめる。Mermaid の `sanitize` の呼び出しは `ADD_TAGS`・`ADD_ATTR`・`HTML_INTEGRATION_POINTS` だけを渡し、DOMPurify の `IN_PLACE`・`CUSTOM_ELEMENT_HANDLING` の助言の対象外。`markmap-lib` は `new MarkdownIt({ html: true, breaks: true })` で使い、linkify は無効(markdown-it の助言の対象外)。`rehype-katex` は `trust` を指定しない(katex の助言は `trust` の制限の迂回)。
+3. 同じ文書の描画を、更新の前後で比べる。サーバーの描画結果(`/api/doc` など)はバイト単位で、ブラウザの描画は DOM を正規化した署名(要素数、SHA-256、色の計算値、図の寸法)で。更新前は、更新前の依存を入れたクローンから、読み取り専用で起動する。Mermaid の `gitGraph` は、コミット ID が描画のたびの乱数で、同じ版でも寸法が数 px 変わるため、差としない。
+
+### 12.3 残した指摘と、見送った更新
+
+- 残る低7件(`katex`・`mermaid`・`markmap-lib`・`remark-math`・`rehype-katex` など)は、`katex` 0.19(破壊的)・`mermaid` 12(メジャー)・旧版への巻き戻しでしか直せない。更新の必要が出たら、`rehype-katex` 7 と `markmap-lib` との整合を確かめてから行う。
+- 重大の `proxy-addr`(信頼するプロキシを設定したときのみ)と高の `undici`(HTTP クライアントとして使ったときのみ。`markmap-lib` → `cheerio` 経由)は、このアプリでは該当する使い方をしていない。互換の更新で解消したが、件数が減る以外の効果は見込まない。
+- Mermaid 11.17.2 でブロック図(`block-beta`)の余白が変わった(ブロックどうしの間が空く)。表示内容は同じなので許容した。
