@@ -111,7 +111,7 @@ T4 の結果(Browser pane の2タブ構成。フォルダ切替は `window.promp
 - ポップアウトの再読込(依頼外だが同じ領域で発見): **不具合あり→修正**。修正前、再読込するとマインドマップ表示が URL の初期値(通常表示)に戻り、メインと食い違った。修正後は `hello` の往復で復元(フォルダモード・単一ファイルモードの両方。往復は `hello` 1回と `state` 1回のみでループなし)
 - 不正メッセージ: 型違い・null・文字列は無視され、パストラバーサル(`../README.md`)はサーバーが403を返してポップアウトはエラー表示に留まり、メインの `hello` 応答で復旧する
 
-T15 の結果(`C:\Build\md-viewer` のクローンを `62b7b75` に固定し、クローン内の `package.json` の version だけ `1.4.2-rc1` に変更。公開・コミットなし。報告は `C:\Build\EXE化報告_md-viewer.md`):
+T15 の結果(`C:\Build\md-viewer` のクローンを `62b7b75` に固定し、クローン内の `package.json` の version だけ `1.4.2-rc1` に変更。公開・コミットなし。報告は `docs/specs/EXE化報告_md-viewer.md`):
 
 - 成果物(`C:\Build\md-viewer\dist\`): portable zip `md-viewer-portable-win-x64-v1.4.2-rc1.zip`(47,200,545 バイト、SHA256 `F96C9A62…141E5D`)、installer `md-viewer-setup-win-x64-v1.4.2-rc1.exe`(30,386,291 バイト、SHA256 `81B0094A…08AEE6`)。`mdv.exe` は公開済み v1.4.1 と同じサイズ(91,818,496)で、同じ Node の土台。この候補版は T13 の修正前
 - portable・installer(試験用コピー)とも、バナー `MD Viewer v1.4.2-rc1`、`/`・`/app.js`・`/?popout=1` が200。空白・日本語を含むパス、PATH から node を外した状態でも起動する。05 側でも portable を独立に起動して同じ結果を確認した
@@ -119,7 +119,7 @@ T15 の結果(`C:\Build\md-viewer` のクローンを `62b7b75` に固定し、�
 - この PC の実際のインストール(`%LOCALAPPDATA%\Programs\MDViewer`)、スタートメニューの「MD Viewer」、レジストリ、ユーザー PATH は前後で変化なし。05 側でも、v1.4.1 の `dist/` のチェックサム・作業ツリー・インストール先の更新日時が不変であることを確認した
 - この PC の実際のインストールには、本番 AppId のレジストリキーが無い。installer は通常どおりキーを作って消すため、installer の欠陥ではなく、そのインストールの経緯の側と考えられる(経緯は未確認)
 - `desktopicon` タスクに `unchecked` が付いておらず、サイレントインストールの既定でデスクトップに「MD Viewer」のショートカットができる。仕様として意図したものか要確認
-- クローンと試験の記録(`C:\Build\md-viewer`、`C:\Build\rc-test`)は残してある。T1 の確認後に、オーナーが片付けを判断する
+- クローンと試験の記録(`C:\Build\md-viewer`、`C:\Build\md-viewer-rc-test`)は残してある。T1 の確認後に、オーナーが片付けを判断する
 
 T13 の結果(設計は DESIGN §11):
 
@@ -139,19 +139,20 @@ T13-2 の結果(統括の指示2。確認役 補助D の T13 の独立検証〈�
 - 直さなかったもの: 低2(Origin の `https://<Host>`)は、TLS のプロキシの背後で `--allowed-host` を使う場合のために残す(理由は DESIGN §11.5)。情報1〜3 は、ブラウザからは悪用できないため、DESIGN §11.8 に「確かめたが、直さなかったこと」として記録した。情報4(`package.json` の version を 1.4.2 に上げる)は、公開の手順(T5)で行う
 - 挙動の変更: 他のオリジンのページの `<iframe>` の中に、ビューアーを表示できなくなる(たとえば、Web ページを枠に埋め込む他のツールの組み込みプレビュー。そうしたツールでは試していない)。通常のブラウザのタブ・ポップアウト・`localhost` と `127.0.0.1` のどちらでも変わらない。README(英・日)と FEATURES(英・日)の制限事項に書いた
 - 気づいたこと(直していない): `server/index.js` の末尾のエラーハンドラが `err.status` を見ず、`express.json()` の解析エラー(不正な JSON は 400、10KB を超える本文は 413 のはず)も一律 500 にする。実測した(§5.3-12)
+- 確認役 補助D の再確認: **合格**(R1〜R5。`docs/specs/T13.verify.md` の「## 再確認(報告: T13-2)」)。T13 と T13-2 は、これで終わり。再確認で見つかった 情報5〜7・「参考」のうち、情報7(README の `fetch` の言い回し)は直した(`475d027`)。情報5・6・「参考」は、v1.4.2 では直さず、§5.3-13〜15 に残した
 
-T16 の結果(`C:\Build\md-viewer` を `f7356ec` に固定し、クローン内の version だけ `1.4.2-rc2`。報告は `C:\Build\EXE化報告_md-viewer_rc2.md`):
+T16 の結果(`C:\Build\md-viewer` を `f7356ec` に固定し、クローン内の version だけ `1.4.2-rc2`。報告は `docs/specs/EXE化報告_md-viewer_rc2.md`):
 
-- 成果物(`C:\Build\md-viewer\dist\`): portable zip `md-viewer-portable-win-x64-v1.4.2-rc2.zip`(47,204,414 バイト、SHA256 `22F1E762…ECAA71`)、installer `md-viewer-setup-win-x64-v1.4.2-rc2.exe`(30,387,374 バイト、SHA256 `13512451…FA1A16`)。`mdv.exe` の SHA256 は rc1 と同じ(`node.exe` に SEA の blob を注入したもので、アプリの変更は `app\` 側にある)。rc1 の成果物は `C:\Build\rc1-archive\` に移してある
+- 成果物(`C:\Build\md-viewer\dist\`): portable zip `md-viewer-portable-win-x64-v1.4.2-rc2.zip`(47,204,414 バイト、SHA256 `22F1E762…ECAA71`)、installer `md-viewer-setup-win-x64-v1.4.2-rc2.exe`(30,387,374 バイト、SHA256 `13512451…FA1A16`)。`mdv.exe` の SHA256 は rc1 と同じ(`node.exe` に SEA の blob を注入したもので、アプリの変更は `app\` 側にある)。rc1 の成果物は `C:\Build\md-viewer-rc1-archive\` に移してある
 - ビルド済みの exe で、Host / Origin の検査を含む26項目(通常の Host で 200、偽の Host で 403、フォルダ切替の POST が 403 で状態が変わらない、他サイトの Origin、WebSocket の許可と拒否、`--allowed-host`、不正な `--allowed-host` の終了コード、`--help` ほか)が、portable・試験用 installer のインストール先・空白と日本語のパス・PATH から node を外した状態の4通りの `mdv.exe` ですべて合格した。05 側でも、`MDV_EXE` を指定した `test/exe-smoke.test.js`(2件)が rc2 の exe で合格した
 - `app\server\request-guard.js` が同梱され、`app\test` は同梱されていない(フォルダ・zip の両方)
 - installer(試験用コピーで実施。T15 と同じ手順): インストール・アンインストール、スタートメニューの RC-TEST グループ、レジストリキーの作成と削除を確認した。この PC の実際のインストール・スタートメニュー・レジストリ・PATH、公開済み v1.4.1 の `dist/` に変化なし(05 側でも確認)
 - rc2 には `--port` の修正(`e34534f`)が含まれない(99_EXE化 が rc2 でも不具合を再現して確認した)。T17 で rc3 を作った
 - 拒否ログ `[guard] 拒否: ...` は標準エラー出力に出る(標準出力だけを集めると空に見える。設計どおり)
 
-T17 の結果(`C:\Build\md-viewer` を `ceb4a67` に固定し、クローン内の version だけ `1.4.2-rc3`。portable のみ。報告は `C:\Build\EXE化報告_md-viewer_rc3.md`):
+T17 の結果(`C:\Build\md-viewer` を `ceb4a67` に固定し、クローン内の version だけ `1.4.2-rc3`。portable のみ。報告は `docs/specs/EXE化報告_md-viewer_rc3.md`):
 
-- 成果物(`C:\Build\md-viewer\dist\`): portable zip `md-viewer-portable-win-x64-v1.4.2-rc3.zip`(47,204,628 バイト、SHA256 `88C2DB3B…BF3601`)と、`portable\`(`mdv.exe` の SHA256 は `DE622C67…EBED04`。rc1・rc2 と同じ)。`dist\` には rc3 だけを置き、rc2 は `C:\Build\rc2-archive\`、rc1 は `C:\Build\rc1-archive\` に残してある
+- 成果物(`C:\Build\md-viewer\dist\`): portable zip `md-viewer-portable-win-x64-v1.4.2-rc3.zip`(47,204,628 バイト、SHA256 `88C2DB3B…BF3601`)と、`portable\`(`mdv.exe` の SHA256 は `DE622C67…EBED04`。rc1・rc2 と同じ)。`dist\` には rc3 だけを置き、rc2 は `C:\Build\md-viewer-rc2-archive\`、rc1 は `C:\Build\md-viewer-rc1-archive\` に残してある
 - ビルド済みの exe で、Host / Origin の検査を含む26項目と、ポート使用中の11項目が、portable・空白と日本語のパス・PATH から node を外した状態の3通りですべて合格した。ポート使用中は、2つ目が未処理のエラーで落ちず、次のポートで起動し、繰り上がった実際のポートで Host を検査する(rc2 では同じ操作で落ちた)
 - クローンで `npm test`(exe 指定)が19件合格・スキップ0件。05 側でも、メインのリポジトリで `MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` を実行し、19件合格・スキップ0件を確認した。さらに rc3 の exe で、使用中のポート(8952)に2つ目を起動すると 8953 に繰り上がり、標準エラー出力が空であることも確認した
 - `app\server\request-guard.js` と `--port` の修正(`wss.on('error')`)が同梱され、`app\test` は同梱されていない。05 側で、SHA256、クローンの状態(`ceb4a67` と `package.json` の変更のみ)、`dist\` に rc3 だけが残っていること、この PC の実際のインストール・レジストリ・公開済み v1.4.1 の `dist/` に変化が無いことを確認した
@@ -230,7 +231,7 @@ T18 の結果(`C:\Build\md-viewer` を `fb58c97` に固定し、クローン内�
 
 ### 5.2 既知の不具合
 
-確認済みで未修正のものは、エラーハンドラが解析エラーの 400・413 を 500 にする件(§5.3-12。実害は小さい)のみ(§3.2 の不具合はすべて修正済み。サーバーが Host / Origin を検証していなかった件は `05839af`、他サイトのページの `<script>`・`<img>` による読み込みと `<iframe>` への埋め込みは `80b92fd` で修正した)。未検証の点(§5.1)に潜在する不具合は残りうる。
+確認済みで未修正のものは、エラーハンドラが `err.status` を見ず 4xx を 500 にする件(§5.3-12・15。実害は小さい)と、応答ヘッダーが付かない軽微な例外(§5.3-13・14。害は無い)のみ(§3.2 の不具合はすべて修正済み。サーバーが Host / Origin を検証していなかった件は `05839af`、他サイトのページの `<script>`・`<img>` による読み込みと `<iframe>` への埋め込みは `80b92fd` で修正した)。未検証の点(§5.1)に潜在する不具合は残りうる。
 
 ### 5.3 設計上の懸念(率直な指摘)
 
@@ -246,6 +247,9 @@ T18 の結果(`C:\Build\md-viewer` を `fb58c97` に固定し、クローン内�
 10. 【解消】サーバーが接続元の `Host` / `Origin` を検証していなかった(2026-10-19 に試験用サーバーで実測。v1.4.1 以前の公開版にも存在した。`05839af` で修正、設計は DESIGN §11)。偽の `Host`(別のドメイン名)を付けたリクエストも受理され、`POST /api/change-dir` が任意の絶対パスのフォルダへルートを切り替え、`/raw` がそのフォルダ内の任意の種類のファイルを返す。ブラウザの通常の CSRF は、JSON 以外を読まないこと・CORS 許可を返さないことで防がれているが、DNS リバインディング(攻撃者のドメインが 127.0.0.1 に解決される)ではブラウザ上は同一オリジンになるため、悪意のある Web ページが PC 内のファイルを読める可能性がある。README / FEATURES の脅威モデルは「127.0.0.1 限定なら外部から到達できない」前提で、Web ページ経由の到達を想定していない。対処(T13、実施済み): すべての HTTP リクエストと WebSocket 接続で、Host(localhost・IP リテラル・`--allowed-host` の名前のみ)と Origin(Host と一致のみ)を検査する。`/raw` の配信種別の制限は見送った(DESIGN §11.5)。`--host 0.0.0.0` で LAN に公開した場合は認証なしで読み書きされるため、起動時の警告で明示する案もある。【追記】T13 の独立検証で、Origin の付かない `<script>`・`<img>` による読み込みと `<iframe>` への埋め込みが残っていることが分かり、応答ヘッダーで塞いだ(T13-2、`80b92fd`、DESIGN §11.7)
 11. 依存パッケージの既知の脆弱性。`npm audit --omit=dev` で12件(重大1・高1・中4・低6、2026-10-19)。重大の `proxy-addr`(Express 経由。信頼するプロキシを設定したときのみ)と高の `undici`(`markmap-lib` → `cheerio` 経由。HTTP クライアントとして使ったときのみ)は、このアプリでは該当する使い方をしておらず、実害は見込まない。実質的に注意が要るのは、中の `mermaid`・`dompurify`(他人の図や HTML を描画するとき)と `markdown-it`(巨大な文書で処理が止まる)。重大・高・中の6件は `npm audit fix` で解消できると表示される(互換性のある更新)。低の6件(`katex` 系)は破壊的変更でしか解消できず見送り。対処(T14): 更新後に Mermaid・数式・マインドマップ・コードの色付けの描画を回帰確認する
 12. エラーハンドラ(`server/index.js` の末尾)が `err.status` を見ず、一律 500 を返す。`express.json()` の解析エラー(不正な JSON は 400、10KB を超える本文は 413 のはず)も 500 になり、コンソールに `[server]` のエラーが出る(2026-10-19 に実測。T13-2 のときに気づいた)。要求は拒否されるので実害は小さいが、クライアントのエラー表示と運用ログを紛らわしくする。`res.status(err.status ?? err.statusCode ?? 500)` にすれば直る(小さな変更。未着手)
+13. `/vendor/<フォルダ>`(末尾の `/` が無い。例: `/vendor/katex`)は、`serve-static` の 301 で `Content-Security-Policy` が `default-src 'none'` に上書きされ、`frame-ancestors` が外れる(CORP は付く)。301 の本文は表示されず、転送先(`/vendor/katex/` の 404)にはヘッダーが付くので、埋め込みは止まり、害は無い。`public/` にサブフォルダが無いので、ほかに 301 は出ない。直すなら `express.static(…, { redirect: false })`(T13-2 の再確認の情報5。v1.4.2 では直さない)
+14. WebSocket のハンドシェイクの応答(101・403。`ws` が返す)と、Node が返す 400(HTTP/1.1 で Host が無いなど)には、2 つのヘッダーが付かない。どれも文書でも読み込みの対象でもないので、害は無い(WebSocket は DESIGN §11.7 に書いてある)。FEATURES(英・日)・DESIGN の「すべての応答に付く」は、この例外と上の 13 を除く HTTP の応答の意味(再確認の情報6。v1.4.2 では直さない)
+15. 範囲外の Range(416 のはず)と If-Match の不一致(412 のはず)も 500 になる(上の 12 と同じ原因。ヘッダーは付く)。OPTIONS は、Express の自動の応答から、自前の 404 に変わった(アプリは OPTIONS を使わない)(再確認の「参考」。v1.4.2 では直さない)
 
 ## 6. 将来案(未決定・未着手)
 
@@ -331,6 +335,7 @@ T18 の結果(`C:\Build\md-viewer` を `fb58c97` に固定し、クローン内�
 | 2026-10-19 | 統括の指示1(T13 を v1.4.2 に入れる)に対する報告を §10 に記載。テストで、ポートが使用中のときに落ちる既存の不具合を発見して修正(`e34534f`)し、既存の使い方を固定する自動テスト(19件)と、exe 向けのスキップ可能なテストを追加 |
 | 2026-10-19 | 統括の指示2(T13 の独立検証の結果と、v1.4.2 に足す直し)に対応(T13-2、`80b92fd`): 他サイトのページの `<script>`・`<img>` による読み込みと `<iframe>` への埋め込みを、応答ヘッダー(`Cross-Origin-Resource-Policy`・`frame-ancestors`)で止めた。DESIGN §11.5(低2の理由)・§11.7・§11.8(確かめたが直さなかったこと)、README・FEATURES を更新。自動テストは 23件。報告は §10。T13-2 を含む候補版 `1.4.2-rc4` の作成を 99_EXE化 に依頼(T18) |
 | 2026-10-19 | T18 完了: 候補版 `1.4.2-rc4`(T13・`--port` の修正・T13-2 を含む。portable のみ)を作成し、ビルド済みの exe での Host / Origin の拒否・ポート使用中の繰り上がり・応答ヘッダー・`MDV_EXE` を指定した `npm test`(23件、スキップ0件)を含めて検証に合格(§3.2)。05 側で、実ブラウザでも、他のオリジンからの読み込み・埋め込みが拒否されることを確認した。T1 の確認に使える |
+| 2026-10-19 | 統括の指示3・4に対応: 確認役 補助D の再確認が合格(R1〜R5)し、T13・T13-2 は終了。README(英・日)の `fetch` の言い回しを正確にした(`475d027`、情報7)。再確認の情報5・6・「参考」は、直さず §5.3-13〜15 に記録。報告書・試験の記録・アーカイブを指す場所を、`C:\Build` の新しい決まり(`docs/specs/`、`C:\Build\md-viewer-rc-test`・`md-viewer-rc1-archive`・`md-viewer-rc2-archive`)に直した |
 
 ## 10. 統括への報告
 
@@ -375,15 +380,15 @@ T18 の結果(`C:\Build\md-viewer` を `fb58c97` に固定し、クローン内�
 
 **確認役への案内**
 
-- 取得: `C:\AIxDev\md-viewer`(master 先頭)。`npm test` で再現できる。exe は、候補版 `1.4.2-rc2`(`C:\Build\md-viewer\dist\`。報告は `C:\Build\EXE化報告_md-viewer_rc2.md`)を `MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` で確認できる。rc2 は `f7356ec` から作られるため、`--port` の修正(`e34534f`)は含まない(含む rc3 を作成中。公開用のビルドにも含まれる)
+- 取得: `C:\AIxDev\md-viewer`(master 先頭)。`npm test` で再現できる。exe は、候補版 `1.4.2-rc2`(`C:\Build\md-viewer\dist\`。報告は `docs/specs/EXE化報告_md-viewer_rc2.md`)を `MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` で確認できる。rc2 は `f7356ec` から作られるため、`--port` の修正(`e34534f`)は含まない(含む rc3 を作成中。公開用のビルドにも含まれる)
 - 見てほしい点: (1) 判定の抜け・回避(`server/request-guard.js` の `parseHost`・`isHostAllowed`・`isOriginAllowed`)。(2) 組み込みの抜け(`server/index.js` の最初のミドルウェアと `verifyClient`。ルートの前に置いてあるか)。(3) 上記の「ポートを検査しない」「IP アドレスをすべて許可する」の判断が妥当か。(4) 拒否の応答が、困ったときに役立つか
 - 今回は未確認: 実際の DNS リバインディング攻撃そのものの再現(`*.localhost` で代用)、PC 名・LAN の IP でのアクセス、リバースプロキシの背後
 
 **統括への依頼事項**: 特になし。T14(依存パッケージの更新)を v1.4.2 に含めるか、v1.4.2 を公開するか(T5)は、引き続きオーナーの判断待ちです。
 
-**追記(rc2 の結果。2026-10-19)**: 候補版 `1.4.2-rc2` の作成と検証が終わりました(T16。§3.2)。ビルド済みの `mdv.exe`(portable・試験用 installer のインストール先・空白と日本語のパス・PATH から node を外した状態の4通り)で、Host / Origin の拒否と通常の使い方の確認が各26項目すべて合格しました。05 側でも、`MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe` を付けて `test/exe-smoke.test.js`(2件)を実行し、合格しました。成果物と SHA256 は `C:\Build\EXE化報告_md-viewer_rc2.md` にあります。rc2 は `--port` の修正(`e34534f`)を含まないため、含む `1.4.2-rc3`(portable のみ)を 99_EXE化 に依頼しました(T17)。確認役は、rc2 の exe に対しても、`MDV_EXE` を付けた `npm test` で同じ確認ができます。
+**追記(rc2 の結果。2026-10-19)**: 候補版 `1.4.2-rc2` の作成と検証が終わりました(T16。§3.2)。ビルド済みの `mdv.exe`(portable・試験用 installer のインストール先・空白と日本語のパス・PATH から node を外した状態の4通り)で、Host / Origin の拒否と通常の使い方の確認が各26項目すべて合格しました。05 側でも、`MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe` を付けて `test/exe-smoke.test.js`(2件)を実行し、合格しました。成果物と SHA256 は `docs/specs/EXE化報告_md-viewer_rc2.md` にあります。rc2 は `--port` の修正(`e34534f`)を含まないため、含む `1.4.2-rc3`(portable のみ)を 99_EXE化 に依頼しました(T17)。確認役は、rc2 の exe に対しても、`MDV_EXE` を付けた `npm test` で同じ確認ができます。
 
-**追記(rc3 の結果。2026-10-19)**: 候補版 `1.4.2-rc3`(`ceb4a67`、`--port` の修正を含む。portable のみ)の作成と検証が終わりました(T17。§3.2)。ビルド済みの `mdv.exe` で、Host / Origin の拒否の26項目と、ポート使用中の繰り上がりの11項目が、3通りの起動方法ですべて合格しました。`MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` は 19 件合格・スキップ 0 件で、05 側でも同じ結果を確認しました。確認役は、同じ exe を、この方法で確認できます。成果物と SHA256 は `C:\Build\EXE化報告_md-viewer_rc3.md` にあります。これで、ビルド済みの exe での確認は、指示1の4点(Host・Origin の拒否、応答と説明、既存の使い方の固定)すべてについて済みました。
+**追記(rc3 の結果。2026-10-19)**: 候補版 `1.4.2-rc3`(`ceb4a67`、`--port` の修正を含む。portable のみ)の作成と検証が終わりました(T17。§3.2)。ビルド済みの `mdv.exe` で、Host / Origin の拒否の26項目と、ポート使用中の繰り上がりの11項目が、3通りの起動方法ですべて合格しました。`MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` は 19 件合格・スキップ 0 件で、05 側でも同じ結果を確認しました。確認役は、同じ exe を、この方法で確認できます。成果物と SHA256 は `docs/specs/EXE化報告_md-viewer_rc3.md` にあります。これで、ビルド済みの exe での確認は、指示1の4点(Host・Origin の拒否、応答と説明、既存の使い方の固定)すべてについて済みました。
 
 ### 報告: T13-2(T13 の独立検証で見つかった穴を v1.4.2 に入れる)
 
@@ -446,3 +451,8 @@ T18 の結果(`C:\Build\md-viewer` を `fb58c97` に固定し、クローン内�
 **統括への依頼事項**: 特になし。`<iframe>` への表示ができなくなる点は、オーナーが知っておくとよい変更です(リリースノート案に入れました)。T14(依存パッケージの更新)を v1.4.2 に含めるか、v1.4.2 を公開するか(T5)は、引き続きオーナーの判断待ちです。
 
 **追記(rc4 の結果。2026-10-19)**: 候補版 `1.4.2-rc4`(`fb58c97`、T13-2 を含む。portable のみ)の作成と検証が終わりました(T18。§3.2)。ビルド済みの `mdv.exe` で、Host / Origin の拒否の26項目とポート使用中の11項目(3通りの起動方法)、応答ヘッダーの確認(portable で20件、ほか2通りで各4件)が、すべて合格しました。`MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` は 23 件合格・スキップ 0 件で、05 側でも同じ結果を確認しました。さらに 05 側で、rc4 の exe を実ブラウザ(Browser pane)で確認しました。他のオリジン(別のドメイン名と、同じホストの別のポート)のページからの `<script>`・`<img>`・`fetch(no-cors)`・`<iframe>` は、すべて拒否されます。同一オリジンの表示・チェックボックスの書き込み・ライブリロード・ポップアウトは動きます。確認役は、同じ exe を `MDV_EXE=C:\Build\md-viewer\dist\portable\mdv.exe npm test` で確認できます。成果物と SHA256 は `docs/specs/EXE化報告_md-viewer_rc4.md` にあります。観察: WebSocket のハンドシェイクの応答(101・403)には、2 つのヘッダーが付きません(`ws` が直接応答するため。WebSocket は Host / Origin の検査で守る。意図どおり)。「すべての応答」は、HTTP の応答に限ります。
+
+**追記(指示3・4への対応。2026-10-19)**: 確認役 補助D の再確認は**合格**です(R1〜R5。`docs/specs/T13.verify.md` の「## 再確認(報告: T13-2)」)。T13 と T13-2 は、これで終わりです。
+- 指示4(情報7): README(英・日)の「他サイトの `fetch` で到達するのを防ぐ」を「CORS の `fetch`」に直し、Origin の付かない要求(`<script>`・`<img>`・`no-cors` の `fetch`)は応答をブラウザが捨てる、と FEATURES §5 と同じ正しい書き方にそろえました(`475d027`)。コードは変えていません。
+- 情報5(`/vendor/<フォルダ>` の 301 で `frame-ancestors` が外れる)・情報6(WebSocket の握手などにヘッダーが付かない)・「参考」(416・412 が 500、OPTIONS が自前の 404)は、v1.4.2 では直さず、§5.3-13〜15 に1行ずつ残しました。
+- 指示3: 報告書・試験の記録・アーカイブを指す場所を、新しい場所に直しました(本ファイルの T15〜T17 の結果と §10 の追記、リリース判断資料)。報告書は `docs/specs/EXE化報告_md-viewer*.md`、試験の記録とアーカイブは `C:\Build\md-viewer-rc-test`・`md-viewer-rc1-archive`・`md-viewer-rc2-archive`・`md-viewer-rc3-archive`。参照を直した。
