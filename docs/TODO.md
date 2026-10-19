@@ -545,7 +545,8 @@ T19 の結果(`C:\Build\md-viewer` を `89b3d42` に固定し、クローン内�
 
 - `89b3d42` chore: 依存を、互換の範囲の更新だけ適用する(T14)
 - `3db0721` docs: T14 の結果を TODO・DESIGN §12 に反映する
-- 追記(rc5 の結果)を含む docs のコミット(`3db0721` の次): TODO・DESIGN §12
+- `69a2088` docs: 候補版 rc5(T19)の結果と、除外リストの漏れ(T20)を TODO・DESIGN に反映する(下の追記を含む)
+- `1b50828` docs: 検証時の落とし穴(Browser pane が非表示のときの寸法など)を TODO §7.3 に追記する
 
 **候補版 rc5 の場所**: 報告は `docs/specs/EXE化報告_md-viewer_rc5.md`(99_EXE化 が書いた。`docs/specs/` は git の対象外)、試験の記録は `C:\Build\md-viewer-rc-test\rc5\`、成果物は `C:\Build\md-viewer\dist\portable\mdv.exe` と、同じ場所の zip(`md-viewer-portable-win-x64-v1.4.2-rc5.zip`。47,253,588 バイト、SHA256 `89896585C809B9056D0B4F04997633498F64C100C4C6413A690B9E950C2814C2`)。rc4 の成果物は `C:\Build\md-viewer-rc4-archive\` に退避した。
 
