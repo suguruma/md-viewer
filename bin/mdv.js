@@ -11,7 +11,10 @@ const HELP = `MD Viewer - ローカルMarkdownビューアー
 
 オプション:
   -p, --port N    ポート番号(既定 8931。使用中なら自動で +1)
-      --host H    バインド先アドレス(既定 127.0.0.1)
+      --host H    バインド先アドレス(既定 127.0.0.1)。名前を指定した場合は、その名前も許可される
+      --allowed-host NAME
+                  localhost・IP アドレス以外の名前(PC 名など)でのアクセスを許可する(複数指定可)。
+                  それ以外の Host ヘッダーの要求は、DNS リバインディング対策として拒否される
       --no-open   起動時にブラウザを開かない
       --poll      ポーリングでファイル監視(OneDrive等で更新検知が効かない場合)
   -h, --help      このヘルプを表示
@@ -28,6 +31,7 @@ try {
     options: {
       port: { type: 'string', short: 'p', default: '8931' },
       host: { type: 'string', default: '127.0.0.1' },
+      'allowed-host': { type: 'string', multiple: true, default: [] },
       'no-open': { type: 'boolean', default: false },
       poll: { type: 'boolean', default: false },
       help: { type: 'boolean', short: 'h', default: false },
@@ -56,6 +60,7 @@ try {
     targetPath: parsed.positionals[0] ?? '.',
     port,
     host: parsed.values.host,
+    allowedHosts: parsed.values['allowed-host'],
     open: !parsed.values['no-open'],
     poll: parsed.values.poll,
   })

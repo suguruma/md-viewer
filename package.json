@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "node bin/mdv.js",
-    "sample": "node bin/mdv.js sample --port 8931"
+    "sample": "node bin/mdv.js sample --port 8931",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=20.6"
