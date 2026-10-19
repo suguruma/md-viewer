@@ -369,7 +369,7 @@ T13 の独立した確認(2026-10-19)で、Host / Origin の検査では塞げ�
 
 1. 束ねファイルの中の版を、実ファイルで確かめる(`mermaid.min.js` の DOMPurify の版、`index.iife.js` のハッシュ)。
 2. 助言が対象にする機能を、このアプリが使っているかを確かめる。Mermaid の `sanitize` の呼び出しは `ADD_TAGS`・`ADD_ATTR`・`HTML_INTEGRATION_POINTS` だけを渡し、DOMPurify の `IN_PLACE`・`CUSTOM_ELEMENT_HANDLING` の助言の対象外。`markmap-lib` は `new MarkdownIt({ html: true, breaks: true })` で使い、linkify は無効(markdown-it の助言の対象外)。`rehype-katex` は `trust` を指定しない(katex の助言は `trust` の制限の迂回)。
-3. 同じ文書の描画を、更新の前後で比べる。サーバーの描画結果(`/api/doc` など)はバイト単位で、ブラウザの描画は DOM を正規化した署名(要素数、SHA-256、色の計算値、図の寸法)で。更新前は、更新前の依存を入れたクローンから、読み取り専用で起動する。Mermaid の `gitGraph` は、コミット ID が描画のたびの乱数で、同じ版でも寸法が数 px 変わるため、差としない。
+3. 同じ文書の描画を、更新の前後で比べる。サーバーの描画結果(`/api/doc` など)はバイト単位で、ブラウザの描画は DOM を正規化した署名(要素数、SHA-256、色の計算値、図の寸法)で。更新前は、更新前の依存を入れたクローンから、読み取り専用で起動する。Mermaid の `gitGraph` は、コミット ID が描画のたびの乱数で、同じ版でも寸法が数 px 変わるため、差としない。SVG 全体のハッシュも、class・ER・gitGraph・sankey の4種類は、同じ版・同じ実行の中でも描画のたびに変わるので、比較に使えない(要素数・文字・色・寸法で比べる)。Browser pane が非表示だと寸法が 0 になるので、寸法は、ペインを表示した状態で比べる(寸法を除いた署名の比較は、非表示でもできる)。
 
 ### 12.3 残した指摘と、見送った更新
 
