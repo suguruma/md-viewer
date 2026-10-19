@@ -1,16 +1,16 @@
 import { test, before, after } from 'node:test'
 import assert from 'node:assert/strict'
-import http from 'node:http'
-import net from 'node:net'
-import { spawn, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import WebSocket from 'ws'
+import { freePort, startServer, request, getConfig, connectWs, waitFor } from '../test-helpers/server.js'
 
 // 実際にサーバーを起動し、偽の Host / 他サイトの Origin を付けた要求が HTTP・WebSocket の両方で拒否されること、
-// 通常の要求は通ることを確かめる(request-guard.js の単体テストでは見えない、組み込みの抜けを防ぐ)。
+// 既存の使い方(ブラウザで開く・ポップアウト・--port の指定・ライブリロード)は壊れないことを確かめる
+// (request-guard.js の単体テストでは見えない、組み込みの抜けを防ぐ)。
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const mdv = path.join(root, 'bin', 'mdv.js')
@@ -19,93 +19,12 @@ let docsDir
 let otherDir
 let main // { port, stop }
 
-function freePort() {
-  return new Promise((resolve, reject) => {
-    const s = net.createServer()
-    s.once('error', reject)
-    s.listen(0, '127.0.0.1', () => {
-      const { port } = s.address()
-      s.close(() => resolve(port))
-    })
-  })
-}
-
-// サーバーを子プロセスで起動し、起動バナーの URL からポートを読み取る
-async function startMdv(extraArgs = []) {
-  const child = spawn(process.execPath, [mdv, docsDir, '--port', String(await freePort()), '--no-open', ...extraArgs], {
+// node bin/mdv.js を起動する。port を省略すると、空きポートを指定する
+async function startMdv({ args = [], port } = {}) {
+  return startServer({
+    command: process.execPath,
+    args: [mdv, docsDir, '--port', String(port ?? (await freePort())), '--no-open', ...args],
     cwd: root,
-    stdio: ['ignore', 'pipe', 'pipe'],
-  })
-  const exited = new Promise((resolve) => child.once('exit', resolve))
-  let output = ''
-  child.stderr.on('data', (d) => (output += d))
-  const port = await new Promise((resolve, reject) => {
-    const fail = (message) => {
-      clearTimeout(timer)
-      child.kill()
-      reject(new Error(`${message}:\n${output}`))
-    }
-    const timer = setTimeout(() => fail('サーバーが起動しませんでした'), 30000)
-    exited.then((code) => fail(`サーバーが起動前に終了しました(code ${code})`))
-    child.stdout.on('data', (d) => {
-      output += d
-      const m = /URL\s*: http:\/\/127\.0\.0\.1:(\d+)\//.exec(output)
-      if (m) {
-        clearTimeout(timer)
-        resolve(Number(m[1]))
-      }
-    })
-  })
-  return {
-    port,
-    async stop() {
-      child.kill()
-      await exited
-    },
-  }
-}
-
-function request(port, { method = 'GET', url, headers = {}, body }) {
-  return new Promise((resolve, reject) => {
-    const payload = body === undefined ? undefined : JSON.stringify(body)
-    const req = http.request(
-      {
-        host: '127.0.0.1',
-        port,
-        method,
-        path: url,
-        headers: {
-          ...(payload === undefined ? {} : { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) }),
-          ...headers,
-        },
-      },
-      (res) => {
-        let text = ''
-        res.setEncoding('utf8')
-        res.on('data', (d) => (text += d))
-        res.on('end', () => resolve({ status: res.statusCode, text }))
-      },
-    )
-    req.on('error', reject)
-    req.end(payload)
-  })
-}
-
-const getConfig = async (port) => JSON.parse((await request(port, { url: '/api/config' })).text)
-
-// WebSocket の接続結果: 'open'(接続できた)か、拒否されたときの HTTP ステータス
-function connectWs(port, { host, origin }) {
-  return new Promise((resolve) => {
-    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`, { origin, headers: host ? { Host: host } : {} })
-    ws.on('open', () => {
-      ws.close()
-      resolve('open')
-    })
-    ws.on('unexpected-response', (_req, res) => {
-      res.resume()
-      resolve(res.statusCode)
-    })
-    ws.on('error', () => resolve('error'))
   })
 }
 
@@ -124,13 +43,19 @@ after(async () => {
   rmSync(otherDir, { recursive: true, force: true })
 })
 
-test('localhost と IP アドレスの Host は通る', async () => {
-  for (const host of [`127.0.0.1:${main.port}`, `localhost:${main.port}`]) {
-    const res = await request(main.port, { url: '/api/config', headers: { Host: host } })
-    assert.equal(res.status, 200, host)
-    assert.equal(JSON.parse(res.text).rootPath, docsDir)
+test('ブラウザでの通常の使い方: localhost・127.0.0.1・[::1] の Host で、画面・ポップアウト・API が取得できる', async () => {
+  const urls = [
+    '/', '/?popout=1', '/app.js', '/style.css', '/vendor/katex/katex.min.css',
+    '/api/config', '/api/tree', '/api/doc?path=a.md', '/api/search?q=secret', '/raw/secret.txt',
+  ]
+  for (const host of [`127.0.0.1:${main.port}`, `localhost:${main.port}`, `[::1]:${main.port}`]) {
+    for (const url of urls) {
+      const res = await request(main.port, { url, headers: { Host: host } })
+      assert.equal(res.status, 200, `${host} ${url}`)
+    }
   }
-  assert.equal((await request(main.port, { url: '/' })).status, 200)
+  const config = await getConfig(main.port)
+  assert.equal(config.rootPath, docsDir)
 })
 
 test('DNS リバインディング(偽の Host)は、API・静的ファイル・生ファイル・フォルダ切替のすべてで 403 になる', async () => {
@@ -181,8 +106,37 @@ test('WebSocket: 偽の Host・他サイトの Origin は拒否し、正しい�
   )
 })
 
+test('ライブリロード: 許可された WebSocket 接続に、ファイルの変更が通知される', async () => {
+  const ws = new WebSocket(`ws://localhost:${main.port}/ws`, { origin: `http://localhost:${main.port}` })
+  const messages = []
+  ws.on('message', (data) => messages.push(JSON.parse(String(data))))
+  await new Promise((resolve, reject) => {
+    ws.once('open', resolve)
+    ws.once('error', reject)
+  })
+  try {
+    writeFileSync(path.join(docsDir, 'a.md'), '# a(変更後)\n')
+    await waitFor(() => messages.some((m) => m.type === 'doc-changed' && m.path === 'a.md'))
+  } finally {
+    ws.close()
+  }
+})
+
+test('--port の指定: 使用中なら自動で繰り上がり、繰り上がった実際のポートで Host を検査する', async () => {
+  const second = await startMdv({ port: main.port }) // main が使用中のポートを指定する
+  try {
+    assert.notEqual(second.port, main.port)
+    for (const host of [`127.0.0.1:${second.port}`, `localhost:${second.port}`]) {
+      assert.equal((await request(second.port, { url: '/api/config', headers: { Host: host } })).status, 200, host)
+    }
+    assert.equal((await request(second.port, { url: '/api/config', headers: { Host: `evil.example:${second.port}` } })).status, 403)
+  } finally {
+    await second.stop()
+  }
+})
+
 test('--allowed-host で許可した名前だけが追加で通る', async () => {
-  const server = await startMdv(['--allowed-host', 'mypc'])
+  const server = await startMdv({ args: ['--allowed-host', 'mypc'] })
   try {
     assert.equal((await request(server.port, { url: '/api/config', headers: { Host: `mypc:${server.port}` } })).status, 200)
     assert.equal((await request(server.port, { url: '/api/config', headers: { Host: `other:${server.port}` } })).status, 403)
@@ -203,4 +157,10 @@ test('--allowed-host に不正な値を渡すと、起動に失敗して終了�
   })
   assert.equal(res.status, 1)
   assert.match(res.stderr, /--allowed-host/)
+})
+
+test('--help に --allowed-host の説明が出る', () => {
+  const res = spawnSync(process.execPath, [mdv, '--help'], { cwd: root, encoding: 'utf8', timeout: 30000 })
+  assert.equal(res.status, 0)
+  assert.match(res.stdout, /--allowed-host/)
 })

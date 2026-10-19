@@ -231,6 +231,12 @@ export async function startServer(opts) {
       done(false, 403, 'Forbidden')
     },
   })
+  // ws は HTTP サーバーのエラーを WebSocketServer からも再送出する。ポートが使用中のときの listen の失敗(EADDRINUSE)は
+  // listenWithRetry が次のポートを試して処理するが、ここに受け手が無いと未処理のエラーでプロセスが落ち、
+  // 「使用中なら +1 で起動する」が働かない。EADDRINUSE 以外は握りつぶさず記録する
+  wss.on('error', (err) => {
+    if (err?.code !== 'EADDRINUSE') console.error('[ws]', err)
+  })
   const broadcast = (msg) => {
     const s = JSON.stringify(msg)
     for (const client of wss.clients) {
