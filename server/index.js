@@ -14,6 +14,7 @@ import { searchAll } from './search.js'
 import { startWatcher } from './watch.js'
 import { resolveWithin, isMarkdownPath } from './safe-path.js'
 import { createRequestGuard } from './request-guard.js'
+import { securityHeaders } from './security-headers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(__dirname, '..')
@@ -77,7 +78,8 @@ export async function startServer(opts) {
 
   const app = express()
   app.disable('x-powered-by')
-  // 静的配信を含むすべてのリクエストの前に置く
+  // 以下の 2 つは、静的配信を含むすべてのリクエストの前に置く。ヘッダーは、検査で断る応答にも付ける
+  app.use(securityHeaders)
   app.use((req, res, next) => {
     const verdict = guard.check(req)
     if (verdict.ok) return next()
@@ -212,6 +214,11 @@ export async function startServer(opts) {
     const st = await stat(abs).catch(() => null)
     if (!st || !st.isFile()) return res.status(404).json({ error: 'ファイルが見つかりません' })
     res.sendFile(abs)
+  })
+
+  // 未定義のパス。Express 標準の 404 は CSP を `default-src 'none'` に上書きし、frame-ancestors を外してしまうため、自前で返す
+  app.use((req, res) => {
+    res.status(404).json({ error: '見つかりません' })
   })
 
   app.use((err, req, res, next) => {

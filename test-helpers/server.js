@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import http from 'node:http'
 import net from 'node:net'
 import { spawn } from 'node:child_process'
@@ -69,7 +70,7 @@ export function request(port, { method = 'GET', url, headers = {}, body }) {
         let text = ''
         res.setEncoding('utf8')
         res.on('data', (d) => (text += d))
-        res.on('end', () => resolve({ status: res.statusCode, text }))
+        res.on('end', () => resolve({ status: res.statusCode, headers: res.headers, text }))
       },
     )
     req.on('error', reject)
@@ -78,6 +79,19 @@ export function request(port, { method = 'GET', url, headers = {}, body }) {
 }
 
 export const getConfig = async (port) => JSON.parse((await request(port, { url: '/api/config' })).text)
+
+// 他サイトのページからの読み込み・埋め込みを止める応答ヘッダー(server/security-headers.js)が付いていること。
+// 弱める変更に気づけるよう、期待する値は server/ の定数を使わず、ここに直接書く
+const EXPECTED_SECURITY_HEADERS = {
+  'cross-origin-resource-policy': 'same-origin',
+  'content-security-policy': "frame-ancestors 'self'",
+}
+
+export function assertSecurityHeaders(res, label) {
+  for (const [name, value] of Object.entries(EXPECTED_SECURITY_HEADERS)) {
+    assert.equal(res.headers[name], value, `${label}: ${name}`)
+  }
+}
 
 // WebSocket の接続結果: 'open'(接続できた)か、拒否されたときの HTTP ステータス
 export function connectWs(port, { host, origin }) {
