@@ -338,6 +338,7 @@ T19 の結果(`C:\Build\md-viewer` を `89b3d42` に固定し、クローン内�
 - `javascript_tool` はトップレベル `await` が使えない。`read_page` の `filter:"all"` は `display:none` の要素も列挙するため、表示状態は `getComputedStyle` で確認する
 - `navigate` でハッシュだけ変えてもページは再読込されず状態が残る(SPA)。クリーンな状態が必要なら query を変えて再読込させる(コンソールログのバッファは再読込をまたいで残るため、古いエラーが見えることがある。`read_network_requests` で確認する)
 - スクリーンショットが30秒でタイムアウトすることがある(PROCESS.md にも同様の記録)。DOM 検証で代替する
+- Browser pane が非表示だと、`getBoundingClientRect` が 0 を返し、Mermaid の図・マインドマップの寸法の比較が無意味になる(T14・T19 で発生。セッションがどのウィンドウにも開かれていないと、`show_pane` でも表示できない)。寸法を除いた署名(要素数・文字・色)で比べるか、ペインを表示した状態で行う。実際のホイール操作も、非表示のペインでは反応しないことがあった(合成の `WheelEvent` は動く)。d3-zoom のドラッグは、合成のマウスイベントに `view: window` が無いと動かないので、実際のマウス操作(`left_click_drag`)で確かめる。Mermaid の SVG 全体のハッシュは、class・ER・gitGraph・sankey が描画のたびに変わる(乱数の ID)ので、比較に使えない(DESIGN §12.2)
 - ビルドは `package.json` の version を使い、`dist/md-viewer-portable-win-x64-vX.Y.Z.zip` を上書きする。公開済みと同じ版番号のまま試験ビルドすると、手元の成果物が公開済みと食い違う。試験ビルドは `dist/portable` とそのzipを退避してから行い、終わったら戻す(チェックサムで確認)
 - Windows ではカレントディレクトリにしているフォルダは削除・改名できない(`Device or resource busy`)。持続する PowerShell / Bash セッションが `dist/portable` などにいないか確認する
 - Git Bash でバックグラウンド起動した exe の標準出力ログは数秒遅れて書かれる(`sleep` してから読む)。PowerShell の `Start-Process -RedirectStandardOutput` は直後に `Stop-Process` すると空になる
