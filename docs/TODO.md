@@ -106,7 +106,7 @@ T1 の確認項目（期待する動作）:
 5. 99_EXE化: `C:\Build\md-viewer` で `node build/build-portable.mjs`（portable と zip）と Inno Setup（PowerShell で `ISCC.exe /DAppVersion=X.Y.Z installer\setup.iss`）。
 6. 検証: バナーが `MD Viewer vX.Y.Z`、`/`・`/app.js`・`/?popout=1` が200、`MDV_EXE=<mdv.exe> npm test`。installer は試験用コピー（AppId・AppName・DefaultGroupName・アイコン名を変える）でサイレントの install / uninstall（実際のインストールには触れない）。
 7. 統括: push の直前に `origin/master..HEAD` の個人情報検査 → `git push origin master` → `git tag -a vX.Y.Z -m "..."` → `git push origin vX.Y.Z` → `gh release create vX.Y.Z <zip> <exe> --title "MD Viewer vX.Y.Z" --notes-file docs/specs/release-vX.Y.Z.md`。
-8. `gh release view vX.Y.Z --json isDraft,isPrerelease,assets` で確かめ、この台帳の「公開済み最新」と版の表（§1）を更新する。
+8. `gh release view vX.Y.Z --json isDraft,isPrerelease,assets` で確かめ、「公開済み最新」と §1 の版の表を更新する。
 
 ## 7. 検証時の落とし穴
 
@@ -123,4 +123,12 @@ T1 の確認項目（期待する動作）:
 
 ## 8. 統括への報告（直近の節のみ。読み終えた報告は log へ移す）
 
-（報告は次のコミットで足す）
+### 報告: TODO.md の整理（指示8）
+
+日付: 2026-10-24 / 担当: 05 / ref: `_orders/05.md#指示8`
+結果: 済み。TODO.md を 143,113 B（660 行）→ 19,825 B（134 行）。経緯は無変更で `docs/log/TODO_経緯_2026-10-24まで.md`（143,867 B）へ移した。
+コミット: `e5d35cb`（整理・log の追加・参照 2 か所の直し）。この報告は次のコミット。push していない。
+確認: log の本文は元とバイト単位で一致（先頭の見出し 748 B と相対リンク 2 か所を除く）。個人の情報（パス・ユーザー名・実名・セッション ID・メール）の検査は TODO.md・log とも 0 件。`npm test` 23 件（20 合格・3 スキップ）と `npm audit` 7 件（低）は今日の実測。
+直した参照: `docs/DESIGN.md` の「TODO.md の T4」と `test/server-headers.test.js` のコメントの「docs/TODO.md の T13-2」を log に向けた（動作は変えていない）。
+残した: 残タスク（T1・T8・T9・T11・T12・T20）、有効な懸念 14 件、決定事項 12 件、手順、落とし穴。log へ移した: 完了タスクの詳細、更新履歴、過去の報告 5 件、将来案 13 件、T5（公開済み）。
+運用: 報告は §8 に直近の節だけ置き、読み終えた報告は log へ移す。
