@@ -9,7 +9,7 @@ import { freePort, startServer, request, assertSecurityHeaders } from '../test-h
 // 他サイトのページの <script>・<img> による読み込みには Origin が付かず、request-guard の Host / Origin の検査を通ってしまう。
 // それをブラウザに止めさせる応答ヘッダー(Cross-Origin-Resource-Policy)と、<iframe> への埋め込みを止めるヘッダー
 // (frame-ancestors)が、すべての応答に付くことを固定する。実際に遮断するのはブラウザなので、ここで確かめるのはヘッダーまで
-// (遮断そのものは、実ブラウザでの確認。docs/TODO.md の T13-2)。
+// (遮断そのものは、実ブラウザでの確認。docs/log/TODO_経緯_2026-10-24まで.md の T13-2)。
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const mdv = path.join(root, 'bin', 'mdv.js')
