@@ -27,8 +27,8 @@ jobs:
       - name: 構文チェック
         shell: bash
         run: |
-          for f in bin/*.js server/*.js public/*.js build/*.mjs build/*.cjs md-viewer.config.mjs test/*.mjs; do
+          for f in bin/*.js server/*.js public/*.js build/*.mjs build/*.cjs md-viewer.config.mjs test/*.js test-helpers/*.js; do
             node --check "$f"
           done
-      - name: スモークテスト
-        run: node test/smoke.mjs
+      - name: テスト
+        run: npm test
