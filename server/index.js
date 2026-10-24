@@ -13,6 +13,8 @@ import { buildTree, countFiles, listMarkdownFiles } from './tree.js'
 import { searchAll } from './search.js'
 import { startWatcher } from './watch.js'
 import { resolveWithin, isMarkdownPath } from './safe-path.js'
+import { createRequestGuard } from './request-guard.js'
+import { securityHeaders } from './security-headers.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(__dirname, '..')
@@ -23,6 +25,7 @@ export async function startServer(opts) {
     targetPath,
     port: basePort = 8931,
     host = '127.0.0.1',
+    allowedHosts = [],
     open = true,
     poll = false,
   } = opts
@@ -62,8 +65,27 @@ export async function startServer(opts) {
   // 最初のドキュメント表示を高速化する。失敗しても実リクエスト時に再初期化される。
   processor.process({ value: '```js\nconst warmup = 1\n```\n$x$\n', data: { relDir: '' } }).catch(() => {})
 
+  // Host / Origin の検査(DNS リバインディング・他サイトからの要求の対策。詳細は request-guard.js)
+  const guard = createRequestGuard({ host, allowedHosts })
+  const reportedRejections = new Set()
+  const logRejection = (verdict) => {
+    const key = `${verdict.reason}:${verdict.value}`
+    if (reportedRejections.has(key)) return
+    if (reportedRejections.size >= 100) reportedRejections.clear()
+    reportedRejections.add(key)
+    console.warn(`[guard] 拒否: ${verdict.message}`)
+  }
+
   const app = express()
   app.disable('x-powered-by')
+  // 以下の 2 つは、静的配信を含むすべてのリクエストの前に置く。ヘッダーは、検査で断る応答にも付ける
+  app.use(securityHeaders)
+  app.use((req, res, next) => {
+    const verdict = guard.check(req)
+    if (verdict.ok) return next()
+    logRejection(verdict)
+    res.status(403).json({ error: verdict.message })
+  })
   app.use(express.json({ limit: '10kb' }))
   app.use(express.static(path.join(appRoot, 'public')))
   app.use('/vendor/katex', express.static(katexDist))
@@ -194,13 +216,34 @@ export async function startServer(opts) {
     res.sendFile(abs)
   })
 
+  // 未定義のパス。Express 標準の 404 は CSP を `default-src 'none'` に上書きし、frame-ancestors を外してしまうため、自前で返す
+  app.use((req, res) => {
+    res.status(404).json({ error: '見つかりません' })
+  })
+
   app.use((err, req, res, next) => {
     console.error('[server]', err)
     res.status(500).json({ error: String(err?.message ?? err) })
   })
 
   const server = http.createServer(app)
-  const wss = new WebSocketServer({ server, path: '/ws' })
+  // WebSocket は CORS の対象外で、他サイトのページからも接続できてしまうため、ハンドシェイクで同じ検査をする
+  const wss = new WebSocketServer({
+    server,
+    path: '/ws',
+    verifyClient: ({ req }, done) => {
+      const verdict = guard.check(req)
+      if (verdict.ok) return done(true)
+      logRejection(verdict)
+      done(false, 403, 'Forbidden')
+    },
+  })
+  // ws は HTTP サーバーのエラーを WebSocketServer からも再送出する。ポートが使用中のときの listen の失敗(EADDRINUSE)は
+  // listenWithRetry が次のポートを試して処理するが、ここに受け手が無いと未処理のエラーでプロセスが落ち、
+  // 「使用中なら +1 で起動する」が働かない。EADDRINUSE 以外は握りつぶさず記録する
+  wss.on('error', (err) => {
+    if (err?.code !== 'EADDRINUSE') console.error('[ws]', err)
+  })
   const broadcast = (msg) => {
     const s = JSON.stringify(msg)
     for (const client of wss.clients) {
